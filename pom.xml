@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.jvnet.hudson.plugins</groupId>
+		<artifactId>hudson-plugin-parent</artifactId>
+		<version>2.1.2</version>
+	</parent>
+
+	<groupId>com.oracle.hudson.plugins</groupId>
+	<artifactId>ade-classic-plugin</artifactId>
+	<version>1.0</version>
+
+	<packaging>hpi</packaging>
+
+	<name>ADE Source-Only Plugin</name>
+
+	<properties>
+		<hudsonTags>scm,builder</hudsonTags>
+	</properties>
+
+	<distributionManagement>
+		<repository>
+			<id>prototype.plugins</id>
+			<url>http://nexus-poc.oraclecorp.com/nexus/content/repositories/prototype.plugins/</url>
+		</repository>
+	</distributionManagement>
+
+	<developers>
+		<developer>
+			<id>ravi</id>
+			<name>Ravi Kumar Raju V</name>
+			<email>ravikumar.vuddaraju@oracle.com</email>
+		</developer>
+		<developer>
+			<id>jamclark</id>
+			<name>Jim Clark</name>
+			<email>james.x.clark@oracle.com</email>
+		</developer>
+	</developers>
+
+	<url>http://hudson-plugins.github.com/ade-plugin/</url>
+
+	<scm>
+		<connection>scm:git:git://github.com/hudson-plugins/ade-plugin.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/hudson-plugins/ade-plugin.git</developerConnection>
+		<url>https://github.com/hudson-plugins/ade-plugin</url>
+	</scm>
+</project>
