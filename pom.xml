@@ -9,7 +9,7 @@
 		<version>2.1.2</version>
 	</parent>
 
-	<groupId>com.oracle.hudson.plugins</groupId>
+	<groupId>org.jvnet.hudson.plugins</groupId>
 	<artifactId>ade-classic-plugin</artifactId>
 	<version>1.0</version>
 
