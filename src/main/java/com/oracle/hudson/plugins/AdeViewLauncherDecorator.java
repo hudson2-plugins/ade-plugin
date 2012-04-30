@@ -41,6 +41,11 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	}
 	
 	@SuppressWarnings("rawtypes")
+	protected String getViewName(AbstractBuild build) {	
+		return this.viewName+"_"+build.getNumber();
+	}
+	
+	@SuppressWarnings("rawtypes")
 	@Override
 	public Launcher decorateLauncher(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException,
@@ -49,7 +54,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		listener.getLogger().println("time to decorate");
 		
 		final Launcher outer = launcher;
-		final String[] prefix = new String[]{"ade","useview",viewName,"-exec"};
+		final String[] prefix = new String[]{"ade","useview",getViewName(build),"-exec"};
 		final BuildListener l = listener;
 		return new Launcher(outer) {
             @Override
@@ -126,7 +131,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			"-latest",
 			"-series",
 			series,
-			viewName}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
+			getViewName(build)}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
 		Proc proc = launcher.launch(procStarter);
 		int exitCode = proc.join();
 		if (exitCode!=0) {
@@ -166,7 +171,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private Map<String, String> getEnvOverrides() {
 		Map<String,String> overrides = new HashMap<String,String>();
 		overrides.put("ADE_SITE","ade_slc");
-		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC","/scratch/jamclark/view_storage");
+		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC","/scratch/aime/view_storage");
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
 		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
@@ -192,7 +197,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 				ProcStarter procStarter = launcher.launch().cmds(new String[] {
 					"ade",
 					"destroyview",
-					viewName,
+					getViewName(build),
 					"-force"}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
 				Proc proc = launcher.launch(procStarter);
 				int exitCode = proc.join();

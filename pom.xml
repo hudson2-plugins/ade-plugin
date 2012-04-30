@@ -15,7 +15,7 @@
 
 	<packaging>hpi</packaging>
 
-	<name>ADE Source-Only Plugin</name>
+	<name>ADE Source-Only Prototype Plugin</name>
 
 	<properties>
 		<hudsonTags>scm,builder</hudsonTags>

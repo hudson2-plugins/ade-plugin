@@ -60,6 +60,8 @@ public class UIPBuilder extends Builder {
 				"integrate",
 				"-t",
 				task,
+				"-N",
+				"exitifnotransactions",
 				"--New_Label",
 				label
 				).stdout(listener).stderr(listener.getLogger());
