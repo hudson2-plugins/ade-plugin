@@ -62,6 +62,8 @@ public class UIPBuilder extends Builder {
 				task,
 				"-N",
 				"exitifnotransactions",
+				"--Ade_Refreshview_Delay",
+				"360",
 				"--New_Label",
 				label
 				).stdout(listener).stderr(listener.getLogger());
