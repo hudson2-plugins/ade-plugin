@@ -62,6 +62,8 @@ public class UIPBuilder extends Builder {
 				task,
 				"-N",
 				"exitifnotransactions",
+				"-N",
+				"openlog",
 				"--Ade_Refreshview_Delay",
 				"360",
 				"--New_Label",
