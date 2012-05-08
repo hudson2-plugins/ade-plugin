@@ -25,11 +25,23 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	
 	private String viewName;
 	private String series;
+	private Boolean isTip = false;
+	private Boolean shouldDestroyView = true;
 	
 	@DataBoundConstructor
-	public AdeViewLauncherDecorator(String view, String series) {
+	public AdeViewLauncherDecorator(String view, String series, Boolean isTip, Boolean shouldDestroyView) {
 		this.viewName = view;
 		this.series = series;
+		this.isTip = isTip;
+		this.shouldDestroyView = shouldDestroyView;
+	}
+	
+	public Boolean getIsTip() {
+		return this.isTip;
+	}
+	
+	public Boolean getShouldDestroyView() {
+		return this.shouldDestroyView;
 	}
 	
 	public String getSeries() {
@@ -125,13 +137,27 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 		listener.getLogger().println("setup called:  ade createview");
-		ProcStarter procStarter = launcher.launch().cmds(new String[] {
-			"ade",
-			"createview",
-			"-latest",
-			"-series",
-			series,
-			getViewName(build)}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
+		
+		String[] commands = null;
+		if (this.isTip) {
+			commands = new String[] {
+					"ade",
+					"createview",
+					"-latest",
+					"-series",
+					series,
+					getViewName(build)};
+		} else {
+			commands = new String[] {
+					"ade",
+					"createview",
+					"-latest",
+					"-series",
+					"-tip_default",
+					series,
+					getViewName(build)};
+		}
+		ProcStarter procStarter = launcher.launch().cmds(commands).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
 		Proc proc = launcher.launch(procStarter);
 		int exitCode = proc.join();
 		if (exitCode!=0) {
@@ -193,15 +219,19 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
 				throws IOException, InterruptedException {
 			try {
-				listener.getLogger().println("tearing down:  ade destroyview");
-				ProcStarter procStarter = launcher.launch().cmds(new String[] {
-					"ade",
-					"destroyview",
-					getViewName(build),
-					"-force"}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
-				Proc proc = launcher.launch(procStarter);
-				int exitCode = proc.join();
-				listener.getLogger().println("destroyview:  "+exitCode);
+				if (shouldDestroyView) {
+					listener.getLogger().println("tearing down:  ade destroyview");
+					ProcStarter procStarter = launcher.launch().cmds(new String[] {
+						"ade",
+						"destroyview",
+						getViewName(build),
+						"-force"}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
+					Proc proc = launcher.launch(procStarter);
+					int exitCode = proc.join();
+					listener.getLogger().println("destroyview:  "+exitCode);
+				} else {
+					listener.getLogger().println("saving view");
+				}
 			} catch (Exception e) {
 				listener.getLogger().println("Error destroying view:  "+e.getMessage());
 				return false;

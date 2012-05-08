@@ -5,4 +5,10 @@
   <f:entry title="view" field="view">
     <f:textbox />
   </f:entry>
+  <f:entry title="is trying to refresh to tip" field="isTip">
+  	<f:booleanRadio field="isTip" default="false"/>
+  </f:entry>
+  <f:entry title="destroy view after post-build" field="shouldDestroyView">
+  	<f:booleanRadio field="shouldDestroyView" default="true"/>
+  </f:entry>
 </j:jelly>
