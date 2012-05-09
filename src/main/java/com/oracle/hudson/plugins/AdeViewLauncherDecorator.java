@@ -37,10 +37,16 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	}
 	
 	public Boolean getIsTip() {
+		if (this.isTip==null) {
+			return false;
+		}
 		return this.isTip;
 	}
 	
 	public Boolean getShouldDestroyView() {
+		if (this.shouldDestroyView==null) {
+			return true;
+		}
 		return this.shouldDestroyView;
 	}
 	
@@ -139,7 +145,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		listener.getLogger().println("setup called:  ade createview");
 		
 		String[] commands = null;
-		if (this.isTip) {
+		if (!getIsTip()) {
 			commands = new String[] {
 					"ade",
 					"createview",
@@ -152,8 +158,8 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					"ade",
 					"createview",
 					"-latest",
-					"-series",
 					"-tip_default",
+					"-series",
 					series,
 					getViewName(build)};
 		}
@@ -219,7 +225,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
 				throws IOException, InterruptedException {
 			try {
-				if (shouldDestroyView) {
+				if (getShouldDestroyView()) {
 					listener.getLogger().println("tearing down:  ade destroyview");
 					ProcStarter procStarter = launcher.launch().cmds(new String[] {
 						"ade",
