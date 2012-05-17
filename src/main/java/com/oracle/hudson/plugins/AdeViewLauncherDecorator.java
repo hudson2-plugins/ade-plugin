@@ -5,6 +5,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.Proc;
+import hudson.Util;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
@@ -27,6 +28,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private String series;
 	private Boolean isTip = false;
 	private Boolean shouldDestroyView = true;
+	
+	private String workspace = "/scratch/aime/view_storage";
+	private String user = "aime";
 	
 	@DataBoundConstructor
 	public AdeViewLauncherDecorator(String view, String series, Boolean isTip, Boolean shouldDestroyView) {
@@ -74,6 +78,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		final Launcher outer = launcher;
 		final String[] prefix = new String[]{"ade","useview",getViewName(build),"-exec"};
 		final BuildListener l = listener;
+		final String viewName = getViewName(build);
 		return new Launcher(outer) {
             @Override
             public Proc launch(ProcStarter starter) throws IOException {
@@ -120,6 +125,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
             	StringBuffer buffer = new StringBuffer();
             	String prefix = "";
             	for (String arg: args) {
+            		// String replaced = Util.replaceMacro(arg, replace);
             		buffer.append(prefix+arg);
             		prefix = " ";
             	}
@@ -144,11 +150,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			BuildListener listener) throws IOException, InterruptedException {
 		listener.getLogger().println("setup called:  ade createview");
 		
+		workspace = build.getWorkspace().getRemote(); 
 		String[] commands = null;
 		if (!getIsTip()) {
 			commands = new String[] {
 					"ade",
 					"createview",
+					"-force",
 					"-latest",
 					"-series",
 					series,
@@ -157,6 +165,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			commands = new String[] {
 					"ade",
 					"createview",
+					"-force",
 					"-latest",
 					"-tip_default",
 					"-series",
@@ -168,10 +177,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		int exitCode = proc.join();
 		if (exitCode!=0) {
 			listener.getLogger().println("createview(success):  "+exitCode);
-			return new EnvironmentImpl(launcher);
+			return new EnvironmentImpl(launcher,build);
 		} else {
 			listener.getLogger().println("createview:  "+exitCode);
-			return new EnvironmentImpl(launcher);
+			return new EnvironmentImpl(launcher,build);
 		}
 	}
 	
@@ -203,7 +212,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private Map<String, String> getEnvOverrides() {
 		Map<String,String> overrides = new HashMap<String,String>();
 		overrides.put("ADE_SITE","ade_slc");
-		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC","/scratch/aime/view_storage");
+		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",workspace);
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
 		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
@@ -211,16 +220,21 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return overrides;
 	}
 
+	@SuppressWarnings("rawtypes")
 	class EnvironmentImpl extends Environment {
 		private Launcher launcher;
-		EnvironmentImpl(Launcher launcher) {
+		private AbstractBuild build;
+		EnvironmentImpl(Launcher launcher, AbstractBuild build) {
 			this.launcher = launcher;
+			this.build = build;
 		}
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
 			env.put(UIPBuilder.seriesName,series);
+			env.put("ADE_USER",user);
+			env.put("VIEW_NAME",getViewName(build));
+			env.put("ADE_VIEW_ROOT","/scratch/aime/workspace/"+build.getProject().getName()+"/"+user+"_"+getViewName(build));
 		}
-		@SuppressWarnings("rawtypes")
 		@Override
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
 				throws IOException, InterruptedException {
