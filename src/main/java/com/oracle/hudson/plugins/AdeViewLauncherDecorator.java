@@ -28,18 +28,26 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private String series;
 	private Boolean isTip = false;
 	private Boolean shouldDestroyView = true;
+	private Boolean useExistingView = false;
 	
 	private String workspace = "/scratch/aime/view_storage";
 	private String user = "aime";
 	
 	@DataBoundConstructor
-	public AdeViewLauncherDecorator(String view, String series, Boolean isTip, Boolean shouldDestroyView) {
+	public AdeViewLauncherDecorator(String view, String series, 
+									Boolean isTip, Boolean shouldDestroyView,
+									Boolean useExistingView) {
 		this.viewName = view;
 		this.series = series;
 		this.isTip = isTip;
 		this.shouldDestroyView = shouldDestroyView;
+		this.useExistingView = useExistingView;
 	}
 	
+	public Boolean getUseExistingView() {
+		return useExistingView;
+	}
+
 	public Boolean getIsTip() {
 		if (this.isTip==null) {
 			return false;
@@ -73,12 +81,18 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			BuildListener listener) throws IOException, InterruptedException,
 			RunnerAbortedException {
 		
+		FilePath workspace = build.getWorkspace();
 		listener.getLogger().println("time to decorate");
 		
 		final Launcher outer = launcher;
-		final String[] prefix = new String[]{"ade","useview",getViewName(build),"-exec"};
+		String lviewName = getViewName(build);
+		if (useExistingView){
+			lviewName=viewName;
+		}
+
+		final String[] prefix = new String[]{"ade","useview",lviewName,"-exec"};
 		final BuildListener l = listener;
-		final String viewName = getViewName(build);
+//		final String viewName = getViewName(build);
 		return new Launcher(outer) {
             @Override
             public Proc launch(ProcStarter starter) throws IOException {
@@ -148,6 +162,11 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	@Override
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
+		if (useExistingView){
+			listener.getLogger().println("setup called: use existing view" + viewName);
+			return new EnvironmentImpl(launcher,build);
+		}
+		
 		listener.getLogger().println("setup called:  ade createview");
 		
 		workspace = build.getWorkspace().getRemote(); 
