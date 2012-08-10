@@ -2,6 +2,9 @@
   <f:entry title="series" field="series">
     <f:textbox />
   </f:entry>
+  <f:entry title="use existing view" field="useExistingView">
+  	<f:booleanRadio field="useExistingView" default="false" />
+  </f:entry>
   <f:entry title="view" field="view">
     <f:textbox />
   </f:entry>
