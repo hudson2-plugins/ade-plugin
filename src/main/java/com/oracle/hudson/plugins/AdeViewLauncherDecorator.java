@@ -11,11 +11,16 @@ import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run.RunnerAbortedException;
+//import hudson.model.Cause.*;
 import hudson.remoting.Channel;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +36,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private Boolean useExistingView = false;
 	
 	private String workspace = "/scratch/aime/view_storage";
-	private String user = "aime";
+//	private String user = System.getProperty("user.name");
 	
 	@DataBoundConstructor
 	public AdeViewLauncherDecorator(String view, String series, 
@@ -71,8 +76,12 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	protected String getViewName(AbstractBuild build) {	
-		return this.viewName+"_"+build.getNumber();
+	protected String getViewName(AbstractBuild build) {
+		if(useExistingView){
+			return this.viewName;
+		} else {
+			return this.viewName+"_"+build.getNumber();
+		}
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -85,12 +94,8 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		listener.getLogger().println("time to decorate");
 		
 		final Launcher outer = launcher;
-		String lviewName = getViewName(build);
-		if (useExistingView){
-			lviewName=viewName;
-		}
 
-		final String[] prefix = new String[]{"ade","useview",lviewName,"-exec"};
+		final String[] prefix = new String[]{"ade","useview",getViewName(build),"-exec"};
 		final BuildListener l = listener;
 //		final String viewName = getViewName(build);
 		return new Launcher(outer) {
@@ -99,8 +104,8 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
             	// don't prefix either createview or destroyview
             	String[] args = starter.cmds().toArray(new String[]{});
             	starter.envs(getEnvOverrides(starter.envs(),listener));
-            	if (args.length>1 && (args[1].equals("createview")||args[1].equals("destroyview"))) {
-            		l.getLogger().println("detected createview/destroyview");
+            	if (args.length>1 && (args[1].equals("createview")||args[1].equals("destroyview")||args[1].equals("showlabels"))) {
+            		l.getLogger().println("detected createview/destroyview/showlabels");
             		return outer.launch(starter);
             	}
             	// prefix everything else
@@ -113,7 +118,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 
             @Override
             public Channel launchChannel(String[] cmd, OutputStream out, FilePath workDir, Map<String, String> envVars) throws IOException, InterruptedException {
-            	if (cmd.length>1 && (cmd[1].equals("createview")||cmd[1].equals("destroyview"))) {
+            	if (cmd.length>1 && (cmd[1].equals("createview")||cmd[1].equals("destroyview")||cmd[1].equals("showlabels"))) {
             		l.getLogger().println("detected createview/destroyview in Channel");
             		return outer.launchChannel(prefix(cmd),out,workDir,envVars);
             	}
@@ -162,23 +167,47 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	@Override
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
+		workspace = build.getWorkspace().getRemote();
+		
 		if (useExistingView){
-			listener.getLogger().println("setup called: use existing view" + viewName);
-			return new EnvironmentImpl(launcher,build);
+			listener.getLogger().println("setup called: use existing view" + getViewName(build));
+			return new EnvironmentImpl(launcher,build); 
 		}
 		
 		listener.getLogger().println("setup called:  ade createview");
 		
-		workspace = build.getWorkspace().getRemote(); 
+		//first try to figure out what is the latest label to which we can refresh
+		String[] latestLabelsCmds = new String[] {"ade","showlabels","-series",series,"-latest","-public"};
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		
+		Proc proc1 = launcher.launch().cmds(latestLabelsCmds).stdout(out).start();
+
+		proc1.join();
+		ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		//only interested in the last line
+		String latestPublicLabel = null, tmp;
+		while ((tmp = br.readLine()) != null){
+			latestPublicLabel = tmp;
+		}
+
+		listener.getLogger().println("The latest public label is " + latestPublicLabel);
+
+		
+		if (!latestPublicLabel.matches(series + "_[0-9]*\\.[0-9]*.*")){
+			launcher.kill(getEnvOverrides());
+		}
+
+ 
 		String[] commands = null;
 		if (!getIsTip()) {
 			commands = new String[] {
 					"ade",
 					"createview",
 					"-force",
-					"-latest",
-					"-series",
-					series,
+					"-label",
+					latestPublicLabel,
 					getViewName(build)};
 		} else {
 			commands = new String[] {
@@ -187,8 +216,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					"-force",
 					"-latest",
 					"-tip_default",
-					"-series",
-					series,
+					latestPublicLabel,
 					getViewName(build)};
 		}
 		ProcStarter procStarter = launcher.launch().cmds(commands).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
@@ -249,10 +277,11 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		}
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
+			String user = System.getProperty("user.name");
 			env.put(UIPBuilder.seriesName,series);
 			env.put("ADE_USER",user);
 			env.put("VIEW_NAME",getViewName(build));
-			env.put("ADE_VIEW_ROOT","/scratch/aime/workspace/"+build.getProject().getName()+"/"+user+"_"+getViewName(build));
+			env.put("ADE_VIEW_ROOT",build.getWorkspace() + "/"+user+"_"+getViewName(build));
 		}
 		@Override
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
