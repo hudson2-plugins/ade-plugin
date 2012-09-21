@@ -5,7 +5,6 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.Proc;
-import hudson.Util;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
@@ -21,27 +20,44 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.StaplerRequest;
 
 public class AdeViewLauncherDecorator extends BuildWrapper {
 	
 	private String viewName;
 	private String series;
+	private String label;
 	private Boolean isTip = false;
 	private Boolean shouldDestroyView = true;
 	private Boolean useExistingView = false;
+	private Boolean isUsingLabel = false;
 	
-	private String workspace = "/scratch/aime/view_storage";
-	private String user = "aime";
+	//private String workspace;
+	//private String user;
 	
 	@DataBoundConstructor
-	public AdeViewLauncherDecorator(String view, String series, 
+	public AdeViewLauncherDecorator(String view, String series, String label, 
 									Boolean isTip, Boolean shouldDestroyView,
 									Boolean useExistingView) {
 		this.viewName = view;
 		this.series = series;
 		this.isTip = isTip;
+		this.label = label;
+		this.isUsingLabel = labelExists(this.label);
 		this.shouldDestroyView = shouldDestroyView;
 		this.useExistingView = useExistingView;
+	}
+	
+	private String getUser() {
+		return ((DescriptorImpl)this.getDescriptor()).getUser();
+	}
+	
+	private String getWorkspace() {
+		return ((DescriptorImpl)this.getDescriptor()).getWorkspace();
+	}
+	
+	private String getViewStorage() {
+		return ((DescriptorImpl)this.getDescriptor()).getViewStorage();
 	}
 	
 	public Boolean getUseExistingView() {
@@ -66,6 +82,23 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return this.series;
 	}
 	
+	public String getLabel() {
+		return this.label;
+	}
+	
+	private String getExpandedLabel(AbstractBuild build, TaskListener listener) {
+		try {
+			return build.getEnvironment(listener).expand(this.label);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return this.label;
+	}
+	
 	public String getView() {
 		return this.viewName;
 	}
@@ -75,6 +108,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return this.viewName+"_"+build.getNumber();
 	}
 	
+	public Boolean isUsingLabel() {
+		return this.isUsingLabel;
+	}
+ 	
 	@SuppressWarnings("rawtypes")
 	@Override
 	public Launcher decorateLauncher(AbstractBuild build, Launcher launcher,
@@ -166,13 +203,22 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			listener.getLogger().println("setup called: use existing view" + viewName);
 			return new EnvironmentImpl(launcher,build);
 		}
-		
 		listener.getLogger().println("setup called:  ade createview");
 		
-		workspace = build.getWorkspace().getRemote(); 
+		//workspace = build.getWorkspace().getRemote(); 
 		String[] commands = null;
 		if (!getIsTip()) {
-			commands = new String[] {
+			if (labelExists(this.label)) {
+				commands = new String [] {
+						"ade",
+						"createview",
+						"-force",
+						"-label",
+						getExpandedLabel(build,listener),
+						getViewName(build)
+				};
+			} else {
+				commands = new String[] {
 					"ade",
 					"createview",
 					"-force",
@@ -180,6 +226,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					"-series",
 					series,
 					getViewName(build)};
+			}
 		} else {
 			commands = new String[] {
 					"ade",
@@ -203,6 +250,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		}
 	}
 	
+	private boolean labelExists(String label) {
+		return (label!=null && !"".equals(label));
+	}
+
 	private Map<String, String> getEnvOverrides(String[] keyValuePairs,TaskListener listener) {
 		Map<String,String> map = getEnvOverrides();
         if (keyValuePairs!=null) {
@@ -231,7 +282,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private Map<String, String> getEnvOverrides() {
 		Map<String,String> overrides = new HashMap<String,String>();
 		overrides.put("ADE_SITE","ade_slc");
-		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",workspace);
+		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
 		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
@@ -250,9 +301,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
 			env.put(UIPBuilder.seriesName,series);
-			env.put("ADE_USER",user);
+			env.put("ADE_USER",getUser());
 			env.put("VIEW_NAME",getViewName(build));
-			env.put("ADE_VIEW_ROOT","/scratch/aime/workspace/"+build.getProject().getName()+"/"+user+"_"+getViewName(build));
+			env.put("ADE_VIEW_ROOT",getWorkspace()+"/"+build.getProject().getName()+"/"+getUser()+"_"+getViewName(build));
 		}
 		@Override
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
@@ -281,7 +332,14 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 
 	@Extension
 	public static class DescriptorImpl extends BuildWrapperDescriptor {
-
+		private String user;
+		private String workspace;
+		private String viewStorage;
+		
+		public DescriptorImpl() {
+			load();
+		}
+		
 		@Override
 		public boolean isApplicable(AbstractProject<?, ?> arg0) {
 			return true;
@@ -290,6 +348,40 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		@Override
 		public String getDisplayName() {
 			return "ADEBuildWrapper";
+		}
+		
+		public String getUser() {
+			return this.user;
+		}
+		
+		public void setUser(String user) {
+			this.user = user;
+		}
+		
+		public String getWorkspace() {
+			return this.workspace;
+		}
+		
+		public void setWorkspace(String workspace) {
+			this.workspace = workspace;
+		}
+		
+		public String getViewStorage() {
+			return this.viewStorage;
+		}
+		
+		public void setViewStorage(String v) {
+			this.viewStorage = v;
+		}
+		
+		@Override
+		public boolean configure(StaplerRequest req)
+				throws hudson.model.Descriptor.FormException {
+			this.user = req.getParameter("ade_classic.user");
+			this.workspace = req.getParameter("ade_classic.workspace");
+			this.viewStorage = req.getParameter("ade_classic.view_storage");
+			save();
+			return super.configure(req);
 		}
 	}
 }

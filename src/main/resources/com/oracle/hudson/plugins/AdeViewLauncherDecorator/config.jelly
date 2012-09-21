@@ -1,4 +1,5 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  
   <f:entry title="series" field="series">
     <f:textbox />
   </f:entry>
@@ -14,4 +15,20 @@
   <f:entry title="destroy view after post-build" field="shouldDestroyView">
   	<f:booleanRadio field="shouldDestroyView" default="true"/>
   </f:entry>
+  <f:entry title="ADE label to use (usually a job parameter expanded from environment)" field="label">
+  	<f:textbox/>
+  </f:entry>
+  
+  <!--
+  <f:block>
+    <table>
+      <j:set var="usingLabel" value="${instance.isUsingLabel}"/>
+      <f:optionalBlock name="dynamic" title="Use existing ADE label" checked="${usingLabel}">
+        <f:entry title="ADE label to use (usually a job parameter expanded from environment)" field="label">
+          <f:textbox />
+        </f:entry>
+      </f:optionalBlock>
+    </table>
+  </f:block>
+  -->
 </j:jelly>
