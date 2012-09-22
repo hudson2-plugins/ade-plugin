@@ -244,6 +244,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private String getViewStorage() {
 		return ((DescriptorImpl)this.getDescriptor()).getViewStorage();
 	}
+	
+	private String getSite() {
+		return ((DescriptorImpl)this.getDescriptor()).getSite();
+	}
 
 	private String getExpandedLabel(@SuppressWarnings("rawtypes") AbstractBuild build, TaskListener listener) {
 		try {
@@ -289,7 +293,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	 */
 	Map<String, String> getEnvOverrides() {
 		Map<String,String> overrides = new HashMap<String,String>();
-		overrides.put("ADE_SITE","ade_slc");
+		overrides.put("ADE_SITE",getSite());
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
@@ -442,6 +446,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		private String user;
 		private String workspace;
 		private String viewStorage;
+		private String site;
 		
 		public DescriptorImpl() {
 			load();
@@ -455,6 +460,14 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		@Override
 		public String getDisplayName() {
 			return "ADEBuildWrapper";
+		}
+		
+		public String getSite() {
+			return this.site;
+		}
+		
+		public void setSite(String s) {
+			this.site = s;
 		}
 		
 		public String getUser() {
@@ -487,6 +500,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			this.user = req.getParameter("ade_classic.user");
 			this.workspace = req.getParameter("ade_classic.workspace");
 			this.viewStorage = req.getParameter("ade_classic.view_storage");
+			this.site = req.getParameter("ade_classic.site");
 			save();
 			return super.configure(req);
 		}

@@ -29,7 +29,10 @@
       -->
       <f:textbox name="ade_classic.user" value="${descriptor.user}" />
     </f:entry>
-    
+    <f:entry title="ADE site"
+      description="ADE site">
+      <f:textbox name="ade_classic.site" value="${descriptor.site}" />
+    </f:entry>
     <f:entry title="local workspace for ADE views"
       description="local workspace for ADE views">
       <f:textbox name="ade_classic.workspace" value="${descriptor.workspace}" />
