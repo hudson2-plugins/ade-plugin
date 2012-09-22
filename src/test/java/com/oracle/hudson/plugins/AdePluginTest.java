@@ -9,7 +9,7 @@ public class AdePluginTest extends HudsonTestCase {
 
 	public void test() throws Exception {
 		FreeStyleProject project = createFreeStyleProject();
-		project.getBuildWrappersList().add(new AdeViewLauncherDecorator("testview", "SERIES_NAME", "label", false, true, false));
+		project.getBuildWrappersList().add(new AdeViewLauncherDecorator("testview", "SERIES_NAME", "label", false, true, false, false));
 		project.getBuildersList().add(new UIPBuilder("task1"));
 		
 		FreeStyleBuild build = project.scheduleBuild2(0).get();
