@@ -10,22 +10,24 @@ import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run.RunnerAbortedException;
-//import hudson.model.Cause.*;
 import hudson.remoting.Channel;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
+//import hudson.model.Cause.*;
 
 public class AdeViewLauncherDecorator extends BuildWrapper {
 	
@@ -36,11 +38,12 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private Boolean shouldDestroyView = true;
 	private Boolean useExistingView = false;
 	private Boolean isUsingLabel = false;
+	private Boolean cacheAdeEnv = false;
 	
 	@DataBoundConstructor
 	public AdeViewLauncherDecorator(String view, String series, String label, 
 									Boolean isTip, Boolean shouldDestroyView,
-									Boolean useExistingView) {
+									Boolean useExistingView, Boolean cacheAdeEnv) {
 		this.viewName = view;
 		this.series = series;
 		this.isTip = isTip;
@@ -48,6 +51,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		this.isUsingLabel = labelExists(this.label);
 		this.shouldDestroyView = shouldDestroyView;
 		this.useExistingView = useExistingView;
+		this.cacheAdeEnv = cacheAdeEnv;
 	}
 	
 	private String getUser() {
@@ -124,6 +128,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			BuildListener listener) throws IOException, InterruptedException,
 			RunnerAbortedException {
 		
+		if (cacheAdeEnv) {
+			return launcher;
+		}
+		
 		FilePath workspace = build.getWorkspace();
 		listener.getLogger().println("time to decorate");
 		
@@ -138,7 +146,8 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
             	// don't prefix either createview or destroyview
             	String[] args = starter.cmds().toArray(new String[]{});
             	starter.envs(getEnvOverrides(starter.envs(),listener));
-            	if (args.length>1 && (args[1].equals("createview")||args[1].equals("destroyview")||args[1].equals("showlabels"))) {
+            	if (args.length>1 && (args[1].equals("createview")||args[1].equals("destroyview")||
+            			args[1].equals("showlabels")||args[1].equals("useview"))) {
             		l.getLogger().println("detected createview/destroyview/showlabels");
             		return outer.launch(starter);
             	}
@@ -201,77 +210,101 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	@Override
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
-		workspace = build.getWorkspace().getRemote();
+		String workspace = build.getWorkspace().getRemote();
 		
-		if (useExistingView){
-			listener.getLogger().println("setup called: use existing view" + getViewName(build));
-			return new EnvironmentImpl(launcher,build); 
-		}
-		listener.getLogger().println("setup called:  ade createview");
-		
-		//first try to figure out what is the latest label to which we can refresh
-		String[] latestLabelsCmds = new String[] {"ade","showlabels","-series",series,"-latest","-public"};
+		if (!useExistingView){
+			listener.getLogger().println("setup called:  ade createview");
+			
+			//first try to figure out what is the latest label to which we can refresh
+			String[] latestLabelsCmds = new String[] {"ade","showlabels","-series",series,"-latest","-public"};
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		
-		Proc proc1 = launcher.launch().cmds(latestLabelsCmds).stdout(out).start();
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			
+			Proc proc1 = launcher.launch().cmds(latestLabelsCmds).stdout(out).start();
 
-		proc1.join();
-		ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-		BufferedReader br = new BufferedReader(new InputStreamReader(in));
-		//only interested in the last line
-		String latestPublicLabel = null, tmp;
-		while ((tmp = br.readLine()) != null){
-			latestPublicLabel = tmp;
-		}
+			proc1.join();
+			ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			//only interested in the last line
+			String latestPublicLabel = null, tmp;
+			while ((tmp = br.readLine()) != null){
+				latestPublicLabel = tmp;
+			}
 
-		listener.getLogger().println("The latest public label is " + latestPublicLabel);
+			listener.getLogger().println("The latest public label is " + latestPublicLabel);
 
-		
-		if (!latestPublicLabel.matches(series + "_[0-9]*\\.[0-9]*.*")){
-			launcher.kill(getEnvOverrides());
-		}
+			
+			if (!latestPublicLabel.matches(series + "_[0-9]*\\.[0-9]*.*")){
+				launcher.kill(getEnvOverrides());
+			}
 
- 
-		String[] commands = null;
-		if (!getIsTip()) {
-			if (labelExists(this.label)) {
-				commands = new String [] {
+	 
+			String[] commands = null;
+			if (!getIsTip()) {
+				if (labelExists(this.label)) {
+					commands = new String [] {
+							"ade",
+							"createview",
+							"-force",
+							"-label",
+							getExpandedLabel(build,listener),
+							getViewName(build)
+					};
+				} else {
+					commands = new String[] {
 						"ade",
 						"createview",
 						"-force",
 						"-label",
-						getExpandedLabel(build,listener),
-						getViewName(build)
-				};
+						latestPublicLabel,
+						getViewName(build)};
+				}
 			} else {
 				commands = new String[] {
-					"ade",
-					"createview",
-					"-force",
-					"-label",
-					latestPublicLabel,
-					getViewName(build)};
+						"ade",
+						"createview",
+						"-force",
+						"-latest",
+						"-tip_default",
+						latestPublicLabel,
+						getViewName(build)};
 			}
-		} else {
-			commands = new String[] {
-					"ade",
-					"createview",
-					"-force",
-					"-latest",
-					"-tip_default",
-					latestPublicLabel,
-					getViewName(build)};
+			ProcStarter procStarter = launcher.launch().cmds(commands).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
+			Proc proc = launcher.launch(procStarter);
+			int exitCode = proc.join();
+			if (exitCode!=0) {
+				listener.getLogger().println("createview(success):  "+exitCode);
+				return new EnvironmentImpl(launcher,build);
+			} else {
+				listener.getLogger().println("createview:  "+exitCode);
+				return new EnvironmentImpl(launcher,build);
+			}
 		}
-		ProcStarter procStarter = launcher.launch().cmds(commands).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
-		Proc proc = launcher.launch(procStarter);
-		int exitCode = proc.join();
-		if (exitCode!=0) {
-			listener.getLogger().println("createview(success):  "+exitCode);
-			return new EnvironmentImpl(launcher,build);
+		
+		if (cacheAdeEnv){
+			ProcStarter uvProcStarter = launcher.launch().cmds("ade","useview",getViewName(build),"-exec","printenv >" + workspace + "/adeEnv").stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
+			Proc uvProc = launcher.launch(uvProcStarter);
+			int exitCode = uvProc.join();
+			//now read the env variables into Env and return that for all builds
+			Scanner sc = new Scanner(new File(workspace + "/adeEnv")).useDelimiter("=");
+			Map<String,String> envMap = new HashMap<String,String>();
+			String key,value;
+			while (sc.hasNextLine()){
+				key =sc.next();
+				sc.skip("=");
+				value= sc.nextLine();
+				envMap.put(key,value);
+			}
+
+			sc.close();
+
+			EnvironmentImpl retEnv = new EnvironmentImpl(launcher,build);
+			retEnv.setEnvMapToAdd(envMap);
+
+			return retEnv;
 		} else {
-			listener.getLogger().println("createview:  "+exitCode);
-			return new EnvironmentImpl(launcher,build);
+			listener.getLogger().println("setup called: use existing view" + getViewName(build));
+			return new EnvironmentImpl(launcher,build); 
 		}
 	}
 	
@@ -319,9 +352,14 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	class EnvironmentImpl extends Environment {
 		private Launcher launcher;
 		private AbstractBuild build;
+		private Map<String,String> envMapToAdd = null;
 		EnvironmentImpl(Launcher launcher, AbstractBuild build) {
 			this.launcher = launcher;
 			this.build = build;
+		}
+		
+		public void setEnvMapToAdd(Map<String, String> envMapToAdd) {
+			this.envMapToAdd = envMapToAdd;
 		}
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
@@ -330,6 +368,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			env.put("ADE_USER",getUser());
 			env.put("VIEW_NAME",getViewName(build));
 			env.put("ADE_VIEW_ROOT",build.getWorkspace()+"/"+getUser()+"_"+getViewName(build));
+			if (envMapToAdd != null ){
+				env.putAll(envMapToAdd);
+			}
 		}
 		@Override
 		public boolean tearDown(AbstractBuild build, BuildListener listener)

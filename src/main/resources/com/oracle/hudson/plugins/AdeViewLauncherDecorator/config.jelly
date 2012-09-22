@@ -9,6 +9,9 @@
   <f:entry title="view" field="view">
     <f:textbox />
   </f:entry>
+  <f:entry title="use ADE env Caching" field="cacheAdeEnv">
+  	<f:booleanRadio field="cacheAdeEnv" default="false" />
+  </f:entry>
   <f:entry title="is trying to refresh to tip" field="isTip">
   	<f:booleanRadio field="isTip" default="false"/>
   </f:entry>
