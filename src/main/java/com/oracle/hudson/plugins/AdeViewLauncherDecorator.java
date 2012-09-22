@@ -285,7 +285,6 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	        	}
 	        }
         }
-
 		return map;
 	}
 		
@@ -302,10 +301,11 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		Map<String,String> overrides = new HashMap<String,String>();
 		overrides.put("ADE_SITE",getSite());
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
+		overrides.put("ADE_USER",getUser());
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
 		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
-		overrides.put(UIPBuilder.seriesName,series);
+		overrides.put(UIPBuilder.seriesName,getSeries());
 		return overrides;
 	}
 	
