@@ -39,7 +39,7 @@
     </f:entry>
     <f:entry title="local view storage for ADE"
       description="local view storage for ADE">
-      <f:textbox name="ade_classic.view_storage" value="${descriptor.view_storage}" />
+      <f:textbox name="ade_classic.view_storage" value="${descriptor.viewStorage}" />
     </f:entry>
   </f:section>
 </j:jelly>

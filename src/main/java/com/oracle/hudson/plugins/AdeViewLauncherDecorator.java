@@ -170,12 +170,14 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private String[] chooseCreateViewCommand(AbstractBuild build,
 			Launcher launcher, BuildListener listener) throws IOException,
 			InterruptedException {
-		if (!getIsTip()) {
+		if (getIsTip()) {
 			return new String[] {
 				"ade",
 				"createview",
 				"-force",
 				"-latest",
+				"-series",
+				getSeries(),
 				"-tip_default",
 				getViewName(build)};
 		} else {
@@ -193,8 +195,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					"ade",
 					"createview",
 					"-force",
-					"-label",
-					getLatestPublicLabel(launcher, listener),
+					"-latest",
+					"-series",
+					getSeries(),
+					// disabling temporarily as we seem to be searching for labels named
+					// "Determining most recent label..."
+					//"-label",
+					//getLatestPublicLabel(launcher, listener),
 					getViewName(build)};
 			}
 		}
