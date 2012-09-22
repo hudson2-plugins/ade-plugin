@@ -422,11 +422,15 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			try {
 				if (getShouldDestroyView()) {
 					listener.getLogger().println("tearing down:  ade destroyview");
-					ProcStarter procStarter = launcher.launch().cmds(new String[] {
-						"ade",
-						"destroyview",
-						getViewName(build),
-						"-force"}).stdout(listener).stderr(listener.getLogger()).envs(getEnvOverrides());
+					ProcStarter procStarter = launcher.launch()
+						.cmds(new String[] {
+							"ade",
+							"destroyview",
+							getViewName(build),
+							"-force"})
+						.stdout(listener)
+						.stderr(listener.getLogger())
+						.envs(getEnvOverrides());
 					Proc proc = launcher.launch(procStarter);
 					int exitCode = proc.join();
 					listener.getLogger().println("destroyview:  "+exitCode);
