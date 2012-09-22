@@ -14,11 +14,7 @@ import hudson.remoting.Channel;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +23,13 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 //import hudson.model.Cause.*;
 
+/**
+ * Everything build step has to happen in an ADE view requires that Hudson know how to "wrap" these commands
+ * to run within the context of an ADE view. 
+ * 
+ * @author jamclark
+ *
+ */
 public class AdeViewLauncherDecorator extends BuildWrapper {
 	
 	private String viewName;
@@ -97,7 +100,12 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
  	
 	/**
 	 * this method is called every time a build step runs and allows us to decide how to
-	 * wrap any call that needs to run in an ADE view.
+	 * wrap any call that needs to run in an ADE view.  
+	 * 
+	 * the launcher passed in to the setup method is _also_ decorated.  This is important 
+	 * because anything that runs in the setup method will also be decorated and in ADE, it's 
+	 * important that out-of-view operations be skipped.  We have put this logic in the EnvironmentImpl
+	 * class but it may be better to refactor this into the decorateLauncher method where it's more obvious
 	 * 
 	 * Since it may be a waste of time to enter a view if you already know the environment that
 	 * you should use, we may try to cache the environment and continue to use the default launcher
@@ -118,6 +126,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		}
 	}
 	
+	/**
+	 * there is a setup phase for all job steps that run within a build wrapper.  This is called
+	 * once per job.  For ADE, we use this phase to setup the view (and possibly cache the
+	 * environmnt)
+	 * 
+	 * @return Environment Objects represent the environment that all subsequent Launchers should run in
+	 */
 	@SuppressWarnings("rawtypes")
 	@Override
 	public Environment setUp(AbstractBuild build, Launcher launcher,

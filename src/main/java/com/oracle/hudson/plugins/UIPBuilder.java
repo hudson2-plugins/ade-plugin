@@ -19,8 +19,9 @@ import java.util.Map;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
- * Sample {@link Builder}.
- *
+ * {@link Builder} that integrates UIP commands into Hudson
+ * 
+ * @jamclark
  */
 public class UIPBuilder extends Builder {
 	private static final String newLabel = "New_Label";
