@@ -98,6 +98,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return this.isUsingLabel;
 	}
  	
+	public Boolean getCacheAdeEnv() {
+		return this.environmentCache.isActive();
+	}
 	/**
 	 * this method is called every time a build step runs and allows us to decide how to
 	 * wrap any call that needs to run in an ADE view.  
@@ -138,7 +141,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 		if (!useExistingView){
-			return createNewView(build, launcher, listener);
+			createNewView(build, launcher, listener);
+		}
+
+		// if the ADE environment should be cached, grab all the environment variables
+		// and cache them in the Environment that will be passed in to each Launcher
+		if (environmentCache.isActive()) {
+			return environmentCache.createEnvironment(build, launcher, listener, this);
 		} else {
 			listener.getLogger().println("setup called: use existing view" + getViewName(build));
 			return new EnvironmentImpl(launcher,build); 
@@ -146,7 +155,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private Environment createNewView(AbstractBuild build, Launcher launcher,
+	private void createNewView(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 		listener.getLogger().println("setup called:  ade createview");
 		
@@ -160,18 +169,14 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
  		Proc proc = launcher.launch(procStarter);
 		int exitCode = proc.join();
 
-		// if the ADE environment should be cached, grab all the environment variables
-		// and cache them in the Environment that will be passed in to each Launcher
-		if (environmentCache.isActive()) {
-			return environmentCache.createEnvironment(build, launcher, listener, this);
-		}
 
 		if (exitCode!=0) {
 			listener.getLogger().println("createview(success):  "+exitCode);
-			return new EnvironmentImpl(launcher,build);
+			//return new EnvironmentImpl(launcher,build);
+			launcher.kill(getEnvOverrides());
 		} else {
 			listener.getLogger().println("createview:  "+exitCode);
-			return new EnvironmentImpl(launcher,build);
+			//return new EnvironmentImpl(launcher,build);
 		}
 	}
 
@@ -211,19 +216,19 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		}
 	}
 	
-	private String getUser() {
+	String getUser() {
 		return ((DescriptorImpl)this.getDescriptor()).getUser();
 	}
 
-	private String getWorkspace() {
+	String getWorkspace() {
 		return ((DescriptorImpl)this.getDescriptor()).getWorkspace();
 	}
 
-	private String getViewStorage() {
+	String getViewStorage() {
 		return ((DescriptorImpl)this.getDescriptor()).getViewStorage();
 	}
 	
-	private String getSite() {
+	String getSite() {
 		return ((DescriptorImpl)this.getDescriptor()).getSite();
 	}
 

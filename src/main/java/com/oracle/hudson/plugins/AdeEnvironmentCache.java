@@ -37,7 +37,7 @@ class AdeEnvironmentCache {
 			@SuppressWarnings("rawtypes") AbstractBuild build, Launcher launcher, BuildListener listener, 
 			AdeViewLauncherDecorator ade) 
 			throws IOException, InterruptedException {
-		String workspace = build.getWorkspace().getRemote();
+		String workspace = ade.getWorkspace();
 		ProcStarter uvProcStarter = launcher.launch()
 				.cmds("ade","useview",ade.getViewName(build),"-exec","printenv >" + workspace + "/adeEnv")
 				.stdout(listener)
