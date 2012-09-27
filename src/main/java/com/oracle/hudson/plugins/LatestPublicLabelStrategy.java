@@ -29,17 +29,13 @@ class LatestPublicLabelStrategy {
 		AdeViewLauncherDecorator ade) {
 		
 		try {
-//			return new String[] {
-//					"ade",
-//					"createview",
-//					"-force",
-//					"-series",
-//					ade.getSeries(),
-//					"-label",
-//					getLatestPublicLabel(launcher, listener,ade),
-//					ade.getViewName(build)};
-			// this is not working at present so I'm just falling back to the original strategy
-			throw new Exception();
+			return new String[] {
+					"ade",
+					"createview",
+					"-force",
+					"-label",
+					getLatestPublicLabel(launcher, listener,ade),
+					ade.getViewName(build)};
 		} catch (Exception e) {
 			// fall back to the -latest strategy
 			return new String[] {
