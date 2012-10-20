@@ -42,7 +42,7 @@ class AdeEnvironmentCache {
 				.cmds("ade","useview",ade.getViewName(build),"-exec","printenv >" + workspace + "/adeEnv")
 				.stdout(listener)
 				.stderr(listener.getLogger())
-				.envs(ade.getEnvOverrides());
+				.envs(ade.getEnvOverrides(build));
 		Proc uvProc = launcher.launch(uvProcStarter);
 		uvProc.join();
 		//now read the env variables into Env and return that for all builds

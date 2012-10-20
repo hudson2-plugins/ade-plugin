@@ -164,7 +164,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					chooseCreateViewCommand(build, launcher, listener))
 				.stdout(listener)
 				.stderr(listener.getLogger())
-				.envs(getEnvOverrides());
+				.envs(getEnvOverrides(build));
 
  		Proc proc = launcher.launch(procStarter);
 		int exitCode = proc.join();
@@ -173,7 +173,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		if (exitCode!=0) {
 			listener.getLogger().println("createview(success):  "+exitCode);
 			//return new EnvironmentImpl(launcher,build);
-			launcher.kill(getEnvOverrides());
+			launcher.kill(getEnvOverrides(build));
 		} else {
 			listener.getLogger().println("createview:  "+exitCode);
 			//return new EnvironmentImpl(launcher,build);
@@ -249,21 +249,6 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return (label!=null && !"".equals(label));
 	}
 
-	Map<String, String> getEnvOverrides(String[] keyValuePairs,TaskListener listener) {
-		Map<String,String> map = getEnvOverrides();
-        if (keyValuePairs!=null) {
-	        for( String keyValue: keyValuePairs ) {
-	        	String[] split = keyValue.split("=");
-	        	if (split.length<2) {
-	        		listener.getLogger().println(keyValue+" not in the correct format");
-	        	} else {
-	        		map.put(split[0],split[1]);
-	        	}
-	        }
-        }
-		return map;
-	}
-		
 	/**
 	 * ADE magic that we will need to expose as plugin-level config since all 3 of these settings depend on how
 	 * the slave is configured
@@ -273,15 +258,18 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	 * 
 	 * @return
 	 */
-	Map<String, String> getEnvOverrides() {
+	Map<String, String> getEnvOverrides(AbstractBuild build) {
 		Map<String,String> overrides = new HashMap<String,String>();
+		
+		overrides.put(UIPBuilder.seriesName,getSeries());
+		overrides.put("ADE_USER",getUser());
+		overrides.put("VIEW_NAME",getViewName(build));
+		overrides.put("ADE_VIEW_ROOT",build.getWorkspace()+"/"+getUser()+"_"+getViewName(build));
 		overrides.put("ADE_SITE",getSite());
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
-		overrides.put("ADE_USER",getUser());
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
 		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
-		overrides.put(UIPBuilder.seriesName,getSeries());
 		return overrides;
 	}
 	
@@ -306,7 +294,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
         public Proc launch(ProcStarter starter) throws IOException {
         	// don't prefix either createview or destroyview
         	String[] args = starter.cmds().toArray(new String[]{});
-        	starter.envs(getEnvOverrides(starter.envs(),listener));
+        	//starter.envs(getEnvOverrides(starter.envs(),listener));
         	if (args.length>1 && (args[1].equals("createview")||args[1].equals("destroyview")||
         			args[1].equals("showlabels")||args[1].equals("useview"))) {
         		listener.getLogger().println("detected createview/destroyview/showlabels");
@@ -319,7 +307,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
             }
             return outer.launch(starter);
         }
-
+        
         @Override
         public Channel launchChannel(String[] cmd, OutputStream out, FilePath workDir, Map<String, String> envVars) throws IOException, InterruptedException {
         	if (cmd.length>1 && (cmd[1].equals("createview")||cmd[1].equals("destroyview")||cmd[1].equals("showlabels"))) {
@@ -391,10 +379,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
 			String user = System.getProperty("user.name");
-			env.put(UIPBuilder.seriesName,series);
-			env.put("ADE_USER",getUser());
-			env.put("VIEW_NAME",getViewName(build));
-			env.put("ADE_VIEW_ROOT",build.getWorkspace()+"/"+getUser()+"_"+getViewName(build));
+			env.putAll(getEnvOverrides(build));
 			if (envMapToAdd != null ){
 				env.putAll(envMapToAdd);
 			}
@@ -413,7 +398,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 							"-force"})
 						.stdout(listener)
 						.stderr(listener.getLogger())
-						.envs(getEnvOverrides());
+						.envs(getEnvOverrides(build));
 					Proc proc = launcher.launch(procStarter);
 					int exitCode = proc.join();
 					listener.getLogger().println("destroyview:  "+exitCode);

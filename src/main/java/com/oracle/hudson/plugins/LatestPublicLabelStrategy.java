@@ -34,7 +34,7 @@ class LatestPublicLabelStrategy {
 					"createview",
 					"-force",
 					"-label",
-					getLatestPublicLabel(launcher, listener,ade),
+					getLatestPublicLabel(launcher, listener, build, ade),
 					ade.getViewName(build)};
 		} catch (Exception e) {
 			// fall back to the -latest strategy
@@ -56,7 +56,7 @@ class LatestPublicLabelStrategy {
 	 * 
 	 * added by tagarwal
 	 */
-	private String getLatestPublicLabel(Launcher launcher, BuildListener listener, AdeViewLauncherDecorator ade)
+	private String getLatestPublicLabel(Launcher launcher, BuildListener listener, AbstractBuild build, AdeViewLauncherDecorator ade)
 			throws IOException, InterruptedException {
 		//first try to figure out what is the latest label to which we can refresh
 		String[] latestLabelsCmds = new String[] {"ade","showlabels","-series",ade.getSeries(),"-latest","-public"};
@@ -77,7 +77,7 @@ class LatestPublicLabelStrategy {
 		listener.getLogger().println("The latest public label is " + latestPublicLabel);
 		
 		if (!latestPublicLabel.matches(ade.getSeries() + "_[0-9]*\\.[0-9]*.*")){
-			launcher.kill(ade.getEnvOverrides());
+			launcher.kill(ade.getEnvOverrides(build));
 		}
 		return latestPublicLabel;
 	}
