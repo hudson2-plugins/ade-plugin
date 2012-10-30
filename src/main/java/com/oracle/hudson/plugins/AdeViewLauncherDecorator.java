@@ -122,9 +122,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		if (environmentCache.isActive()) {
 			return launcher;
 		} else {
-			listener.getLogger().println("time to decorate");
+			listener.getLogger().println("detected command launch with ADE BuildWrapper active:  decorating launcher");
 			return new UseViewLauncher(launcher,
-					new String[]{"ade","useview",getViewName(build),"-exec"});
+					new String[]{"ade","useview",getViewName(build),"-exec"},build);
 			
 		}
 	}
@@ -258,7 +258,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	 * 
 	 * @return
 	 */
-	Map<String, String> getEnvOverrides(AbstractBuild build) {
+	Map<String, String> getEnvOverrides(AbstractBuild<?,?> build) {
 		Map<String,String> overrides = new HashMap<String,String>();
 		
 		overrides.put(UIPBuilder.seriesName,getSeries());
@@ -273,6 +273,19 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return overrides;
 	}
 	
+	Map<String, String> getEnvOverrides(String[] keyValuePairs,TaskListener listener,AbstractBuild<?,?> build) {
+		Map<String,String> map = getEnvOverrides(build);
+        if (keyValuePairs!=null) {
+	        for( String keyValue: keyValuePairs ) {
+	        	String[] split = keyValue.split("=");
+	        	if (split.length==2) {
+	        		map.put(split[0],split[1]);
+	        	}
+	        }
+        }
+		return map;
+	}
+	
 	/**
 	 * The UseViewLauncher permits an ADE BuildWrapper to translate all commands to run
 	 * within an ADE view.
@@ -285,26 +298,35 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	class UseViewLauncher extends Launcher {
 		private Launcher outer;
 		private String[] prefix;
-		UseViewLauncher(Launcher outer, String[] prefix) {
+		private AbstractBuild<?,?> build;
+		UseViewLauncher(Launcher outer, String[] prefix, AbstractBuild<?,?> b) {
 			super(outer);
 			this.outer = outer;
 			this.prefix = prefix;
+			this.build = b;
 		}
         @Override
         public Proc launch(ProcStarter starter) throws IOException {
-        	// don't prefix either createview or destroyview
+        	// this next line is crucial because a Hudson slave may not create
+        	// launchers that have the appropriate environment to run ADE
+        	// So, we must augment even this environment - ADE uses .cschrc for this today
+        	starter.envs(getEnvOverrides(starter.envs(),listener,this.build));
+
+        	// don't prefix ADE commands that are intended to run outside of a view - this is massively confusing
         	String[] args = starter.cmds().toArray(new String[]{});
-        	//starter.envs(getEnvOverrides(starter.envs(),listener));
-        	if (args.length>1 && (args[1].equals("createview")||args[1].equals("destroyview")||
-        			args[1].equals("showlabels")||args[1].equals("useview"))) {
-        		listener.getLogger().println("detected createview/destroyview/showlabels");
-        		return outer.launch(starter);
+        	if (args.length>1 && (
+        			args[1].equals("createview")||
+        			args[1].equals("destroyview")||
+        			args[1].equals("showlabels")||
+        			args[1].equals("useview"))) {
+        		listener.getLogger().println("detected createview/destroyview/showlabels/useview -> use default launcher but still override Env Vars");
+        	} else {
+        		// prefix everything else
+        		starter.cmds(prefix(starter.cmds().toArray(new String[]{})));
+        		if (starter.masks() != null) {
+        			starter.masks(prefix(starter.masks()));
+        		}
         	}
-        	// prefix everything else
-        	starter.cmds(prefix(starter.cmds().toArray(new String[]{})));
-            if (starter.masks() != null) {
-                starter.masks(prefix(starter.masks()));
-            }
             return outer.launch(starter);
         }
         
@@ -378,7 +400,6 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		}
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
-			String user = System.getProperty("user.name");
 			env.putAll(getEnvOverrides(build));
 			if (envMapToAdd != null ){
 				env.putAll(envMapToAdd);

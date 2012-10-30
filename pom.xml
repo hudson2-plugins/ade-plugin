@@ -11,7 +11,7 @@
 
 	<groupId>org.jvnet.hudson.plugins</groupId>
 	<artifactId>ade-classic-plugin</artifactId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>0.4.1-SNAPSHOT</version>
 
 	<packaging>hpi</packaging>
 
