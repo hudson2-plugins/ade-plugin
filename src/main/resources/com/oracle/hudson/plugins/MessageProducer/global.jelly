@@ -1,0 +1,8 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:section title="Workflow Event Producer">
+    <f:entry title="enabled"
+      description="turn on the message producer for this Hudson master">
+      <f:checkbox name="ade_classic.messageproducer.isEnabled" checked="${descriptor.enabled}" title="enable/disable events"/>
+    </f:entry>
+  </f:section>
+</j:jelly>
