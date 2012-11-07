@@ -26,12 +26,17 @@
 		<dependency>
 			<groupId>oracle.sei.core.internal</groupId>
 			<artifactId>utils</artifactId>
-			<version>1.0</version>
+			<version>1.2</version>
 		</dependency>
 		<dependency>
-			<groupId>com.rabbitmq</groupId>
-			<artifactId>amqp-client</artifactId>
-			<version>2.8.7</version>
+			<groupId>org.apache.qpid</groupId>
+			<artifactId>qpid-client</artifactId>
+			<version>0.18</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.geronimo.specs</groupId>
+			<artifactId>geronimo-jms_1.1_spec</artifactId>
+			<version>1.1.1</version>
 		</dependency>
 	</dependencies>
 

@@ -54,7 +54,7 @@ public class KerberosTicketMonitor extends NodeMonitor {
     private static class OkinitStrategyTask implements Callable<Object,Exception> {
 		public Object call() throws Exception {
     		String userName = "aime";
-            String restUrlTemplate = "http://eseapi.oraclecorp.com/internal/user/"+userName+"?stoken=CD6A1DCD3AF690C8E040E50A0BC05F4E";
+            String restUrlTemplate = "http://eseapi.oraclecorp.com/internal/user/{userName}?stoken=CD6A1DCD3AF690C8E040E50A0BC05F4E";
 
             OkinitStrategy krbStrategy = new OkinitStrategy(restUrlTemplate,userName);
             if (krbStrategy.execute()) {
