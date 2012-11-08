@@ -99,11 +99,11 @@ public class MessageProducer extends RunListener<Run> implements Describable<Mes
 		private String uri = "amqp://guest:guest@/test?brokerlist='tcp://slc01qhl.us.oracle.com:5672'";
 		private String destination = "ADDR:message_queue; {create: always}";
 		@XStreamOmitField
-		private Connection connection;
+		private transient Connection connection;
 		@XStreamOmitField
-		private Session session;
+		private transient Session session;
 		@XStreamOmitField
-		private javax.jms.MessageProducer producer;
+		private transient javax.jms.MessageProducer producer;
 		
 		public MessageProducerDescriptor() {
 			load();
