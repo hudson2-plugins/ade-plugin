@@ -28,6 +28,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.url.URLSyntaxException;
 import org.kohsuke.stapler.StaplerRequest;
 
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
+
 @Extension
 public class MessageProducer extends RunListener<Run> implements Describable<MessageProducer> {
 	
@@ -96,8 +98,11 @@ public class MessageProducer extends RunListener<Run> implements Describable<Mes
 		private Boolean isEnabled = false;
 		private String uri = "amqp://guest:guest@/test?brokerlist='tcp://slc01qhl.us.oracle.com:5672'";
 		private String destination = "ADDR:message_queue; {create: always}";
+		@XStreamOmitField
 		private Connection connection;
+		@XStreamOmitField
 		private Session session;
+		@XStreamOmitField
 		private javax.jms.MessageProducer producer;
 		
 		public MessageProducerDescriptor() {
