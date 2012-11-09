@@ -41,5 +41,9 @@
       description="local view storage for ADE">
       <f:textbox name="ade_classic.view_storage" value="${descriptor.viewStorage}" />
     </f:entry>
+    <f:entry title="token for kerberos initialization"
+      description="token for kerberos initialization">
+      <f:password name="ade_classic.token" value="${descriptor.token}" />
+    </f:entry>
   </f:section>
 </j:jelly>

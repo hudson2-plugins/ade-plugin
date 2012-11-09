@@ -2,6 +2,7 @@ package com.oracle.hudson.plugins;
 
 import hudson.Extension;
 import hudson.model.Computer;
+import hudson.model.Hudson;
 import hudson.model.labels.LabelAtom;
 import hudson.node_monitors.AbstractNodeMonitorDescriptor;
 import hudson.node_monitors.NodeMonitor;
@@ -53,8 +54,15 @@ public class KerberosTicketMonitor extends NodeMonitor {
     
     private static class OkinitStrategyTask implements Callable<Object,Exception> {
 		public Object call() throws Exception {
-    		String userName = "aime";
-            String restUrlTemplate = "http://eseapi.oraclecorp.com/internal/user/{userName}?stoken=CD6A1DCD3AF690C8E040E50A0BC05F4E";
+			String userName;
+			String restUrlTemplate;
+			try {
+				AdeViewLauncherDecorator.DescriptorImpl desc = (AdeViewLauncherDecorator.DescriptorImpl)Hudson.getInstance().getDescriptor(AdeViewLauncherDecorator.DescriptorImpl.class.getName());
+				userName = desc.getUser();
+				restUrlTemplate = "http://eseapi.oraclecorp.com/internal/user/{userName}?stoken="+desc.getToken();
+			} catch (Exception e) {
+				throw new Exception("userName/token are not set on this Master instance");
+			}
 
             OkinitStrategy krbStrategy = new OkinitStrategy(restUrlTemplate,userName);
             if (krbStrategy.execute()) {

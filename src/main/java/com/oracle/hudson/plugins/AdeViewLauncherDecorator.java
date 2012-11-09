@@ -437,6 +437,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	@Extension
 	public static class DescriptorImpl extends BuildWrapperDescriptor {
 		private String user;
+		private String token;
 		private String workspace;
 		private String viewStorage;
 		private String site;
@@ -494,8 +495,16 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			this.workspace = req.getParameter("ade_classic.workspace");
 			this.viewStorage = req.getParameter("ade_classic.view_storage");
 			this.site = req.getParameter("ade_classic.site");
+			this.token = req.getParameter("ade_classic.token");
 			save();
 			return super.configure(req);
+		}
+
+		public String getToken() {
+			return this.token;
+		}
+		public void setToken(String s) {
+			this.token = s;
 		}
 	}
 }
