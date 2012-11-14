@@ -32,9 +32,16 @@ public class KerberosTicketMonitor extends NodeMonitor {
             
             if (!ticket.isValid() && c.getNode().getAssignedLabels().contains(LabelAtom.get("ade"))) {
             	try {
-            		c.getChannel().call(new OkinitStrategyTask());
+    				AdeViewLauncherDecorator.DescriptorImpl desc = 
+    						(AdeViewLauncherDecorator.DescriptorImpl)Hudson.getInstance().getDescriptorByType(
+    								AdeViewLauncherDecorator.DescriptorImpl.class);
+    				if (desc==null || desc.getToken()==null || desc.getUser()==null ) {
+    					throw new Exception("Master ADE config has not been configured with user/token details for kerberos");
+    				}
+    				String restUrlTemplate = "http://eseapi.oraclecorp.com/internal/user/{userName}?stoken="+desc.getToken();
+    				c.getChannel().call(new OkinitStrategyTask(desc.getUser(),restUrlTemplate));
             	} catch (Exception e) {
-            		markOffline(c, new NoKerberosTicket(e.getMessage()));
+            		markOffline(c, new NoKerberosTicket(e.getMessage()==null?"no message provided by OkinitStrategyTask exception":e.getMessage()));
             	}
             }
             
@@ -53,17 +60,14 @@ public class KerberosTicketMonitor extends NodeMonitor {
     };
     
     private static class OkinitStrategyTask implements Callable<Object,Exception> {
+    	private final String userName;
+    	private final String restUrlTemplate;
+    	
+    	OkinitStrategyTask(String u, String t) {
+    		this.userName = u;
+    		this.restUrlTemplate = t;
+    	}
 		public Object call() throws Exception {
-			String userName;
-			String restUrlTemplate;
-			try {
-				AdeViewLauncherDecorator.DescriptorImpl desc = (AdeViewLauncherDecorator.DescriptorImpl)Hudson.getInstance().getDescriptor(AdeViewLauncherDecorator.DescriptorImpl.class.getName());
-				userName = desc.getUser();
-				restUrlTemplate = "http://eseapi.oraclecorp.com/internal/user/{userName}?stoken="+desc.getToken();
-			} catch (Exception e) {
-				throw new Exception("userName/token are not set on this Master instance");
-			}
-
             OkinitStrategy krbStrategy = new OkinitStrategy(restUrlTemplate,userName);
             if (krbStrategy.execute()) {
                 System.out.println("Kerberos Ticket Created");
@@ -83,12 +87,16 @@ public class KerberosTicketMonitor extends NodeMonitor {
 			KerberosTicket ticket = new KerberosTicket();
 			
 			ProcessBuilder builder = new ProcessBuilder();
-			builder.command("ade","oklist");
+			builder.command("ade","identity");
 			Map<String,String> env = builder.environment();
 			Process p = builder.start();
 			
 			try {
 				p.waitFor();
+				if (p.exitValue()==0) {
+					System.out.println("ade identity returned error code 0:  valid ticket!");
+					ticket.setValid();
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -98,7 +106,6 @@ public class KerberosTicketMonitor extends NodeMonitor {
 				System.out.println("KerberosTicketMonitorTask:("+java.net.InetAddress.getLocalHost().getHostName()+") -- "+line);
 				if (line.contains("krbtgt/DEV.ORACLE.COM@DEV.ORACLE.COM")) {
 					System.out.println("found a valid ticket!");
-					ticket.setValid();
 				}
 			}
 			
