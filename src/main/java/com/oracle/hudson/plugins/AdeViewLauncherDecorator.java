@@ -40,11 +40,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private Boolean useExistingView = false;
 	private Boolean isUsingLabel = false;
 	private AdeEnvironmentCache environmentCache;
+        private Boolean fetchLatestIntgFiles = true;
 	
 	@DataBoundConstructor
 	public AdeViewLauncherDecorator(String view, String series, String label, 
-									Boolean isTip, Boolean shouldDestroyView,
-									Boolean useExistingView, Boolean cacheAdeEnv) {
+                                        Boolean isTip, Boolean shouldDestroyView,
+					Boolean useExistingView, Boolean cacheAdeEnv,
+                                        Boolean fetchLatestIntgFiles) {
 		this.viewName = view;
 		this.series = series;
 		this.isTip = isTip;
@@ -53,6 +55,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		this.shouldDestroyView = shouldDestroyView;
 		this.useExistingView = useExistingView;
 		this.environmentCache = new AdeEnvironmentCache(cacheAdeEnv);
+		this.fetchLatestIntgFiles = fetchLatestIntgFiles;
 	}
 	
 	public Boolean getUseExistingView() {
@@ -101,6 +104,19 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Boolean getCacheAdeEnv() {
 		return this.environmentCache.isActive();
 	}
+
+        public Boolean getFetchLatestIntgFiles() {
+                if (fetchLatestIntgFiles == null) {
+                        return true;
+                }
+                return fetchLatestIntgFiles;
+        }
+
+        public void setFetchLatestIntgFiles(Boolean fetchLatestIntgFiles) {
+                this.fetchLatestIntgFiles = fetchLatestIntgFiles;
+        }
+        
+        
 	/**
 	 * this method is called every time a build step runs and allows us to decide how to
 	 * wrap any call that needs to run in an ADE view.  
@@ -143,6 +159,11 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		if (!useExistingView){
 			createNewView(build, launcher, listener);
 		}
+                
+                if (getFetchLatestIntgFiles()) {
+                    fetchLatestIntgFilesInView(build, 
+                            decorateLauncher(build,launcher,listener), listener);
+                }
 
 		// if the ADE environment should be cached, grab all the environment variables
 		// and cache them in the Environment that will be passed in to each Launcher
@@ -285,6 +306,61 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
         }
 		return map;
 	}
+
+        private void fetchLatestIntgFilesInView(AbstractBuild build, 
+                Launcher launcher, BuildListener listener) 
+                throws IOException, InterruptedException {
+                listener.getLogger().println("About to fetch Intg files.");
+ 		ProcStarter procStarter = launcher.launch()
+				.cmds(chooseFindAndFetchIntgFilesCommand())
+				.stdout(listener)
+				.stderr(listener.getLogger())
+				.envs(getEnvOverrides(build));
+
+ 		Proc proc = launcher.launch(procStarter);
+		int exitCode = proc.join();
+
+
+		if (exitCode!=0) {
+			listener.getLogger().println("Failed to fetched Intg files:  "+exitCode);
+			//return new EnvironmentImpl(launcher,build);
+			launcher.kill(getEnvOverrides(build));
+		} else {
+			listener.getLogger().println("Fetched Intg files successfully :  "+exitCode);
+			//return new EnvironmentImpl(launcher,build);
+		}
+        }
+        
+        /*
+         * Command to Find Intg files and fetch them into the view
+         * Note :- Supported only on *nix host. If required may need to 
+         *         extend to support different OS.
+         */
+        private String[] chooseFindAndFetchIntgFilesCommand() {
+            String[] command = {
+                "/usr/bin/find",
+                "intg",
+                "-regex",
+                "'.*\\.\\(pm\\|def\\|tmpl\\)'",
+                "-exec",
+                "ade",
+                "fetch",
+                "{}@@/LATEST",
+                "\\;",
+                "-exec",
+                "rm",
+                "-v",
+                "{}",
+                "\\;",
+                "-exec",
+                "mv",
+                "-v",
+                "{}#LATEST",
+                "{}",
+                "\\;",
+            };
+            return command;
+        }
 	
 	/**
 	 * The UseViewLauncher permits an ADE BuildWrapper to translate all commands to run

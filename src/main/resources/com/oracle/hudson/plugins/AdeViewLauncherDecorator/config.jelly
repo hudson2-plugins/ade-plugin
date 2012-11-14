@@ -21,6 +21,9 @@
   <f:entry title="ADE label to use (usually a job parameter expanded from environment)" field="label">
   	<f:textbox/>
   </f:entry>
+  <f:entry title="Fetch Latest Intg files into the view" field="fetchLatestIntgFiles">
+  	<f:booleanRadio field="fetchLatestIntgFiles" default="true"/>
+  </f:entry>  
   
   <!--
   <f:block>
