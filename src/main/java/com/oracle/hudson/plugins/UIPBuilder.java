@@ -191,27 +191,27 @@ public class UIPBuilder extends Builder {
 
         private String[] chooseFindAndFetchIntgFilesCommand() {
             return new String[]{
-                        "/usr/bin/find",
-                        "intg",
-                        "-regex",
-                        "'.*\\.\\(pm\\|def\\|tmpl\\)'",
-                        "-exec",
-                        "ade",
-                        "fetch",
-                        "{}@@/LATEST",
-                        "\\;",
-                        "-exec",
-                        "rm",
-                        "-v",
-                        "{}",
-                        "\\;",
-                        "-exec",
-                        "mv",
-                        "-v",
-                        "{}#LATEST",
-                        "{}",
-                        "\\;"
-                    };
+                "/usr/bin/find",
+                "intg",
+                "-regex",
+                "'.*\\.\\(pm\\|def\\|tmpl\\)'",
+                "-exec",
+                "ade",
+                "fetch",
+                "{}@@/LATEST",
+                "\\;",
+                "-exec",
+                "rm",
+                "-v",
+                "{}",
+                "\\;",
+                "-exec",
+                "mv",
+                "-v",
+                "{}#LATEST",
+                "{}",
+                "\\;"
+            };
         }
     }
 }
