@@ -48,10 +48,16 @@ public class RefreshIntgAction extends InvisibleAction {
 				"/usr/bin/find", "intg", "-regex",
 				"'.*\\.\\(pm\\|def\\|tmpl\\)'", 
 				"-exec", 
-				"ade", "fetch",
-				"{}@@/LATEST", "\\;", 
-				"-exec", "rm", "-v", "{}", "\\;",
-				"-exec", "mv", "-v", "{}#LATEST", "{}", "\\;", };
+				"bash", "-c",
+				"'  if ade fetch {}@@/LATEST && [ -e {}#LATEST ]; then"
+				+ "   if rm -v {} ; then"
+				+ "     mv -v {}#LATEST {}; "
+				+ "   fi "
+				+ " else"
+				+ "   echo WARNING: Failed to fetch {}@@/LATEST; "
+				+ " fi'",
+				"\\;"
+		};
 		
 		return command;
 	}
