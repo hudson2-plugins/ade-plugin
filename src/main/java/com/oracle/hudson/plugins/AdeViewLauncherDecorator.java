@@ -143,6 +143,15 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		if (!useExistingView){
 			createNewView(build, launcher, listener);
 		}
+		
+		RefreshIntgAction action = build.getAction(RefreshIntgAction.class);
+		if (action!=null) {
+			try {
+				action.execute(build,launcher,listener,this);
+			} catch (Exception e) {
+				listener.error("WARNING:  even though we detected the need to refresh intg.  The operation to do so has failed");
+			}
+		}
 
 		// if the ADE environment should be cached, grab all the environment variables
 		// and cache them in the Environment that will be passed in to each Launcher

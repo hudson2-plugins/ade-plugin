@@ -40,6 +40,12 @@ public class UIPBuilder extends Builder {
     public String getTask() {
         return task;
     }
+    
+    @Override
+    public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
+    	build.addAction(new RefreshIntgAction());
+    	return true;
+    }
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
@@ -47,7 +53,7 @@ public class UIPBuilder extends Builder {
         	EnvVars envVars = build.getEnvironment(listener);
         	String label = null;
         	if (!envVars.containsKey(newLabel)) {
-        		label = getNewLabel(envVars,listener);
+        		label = getNewLabel(envVars,listener,build);
         		if (label==null) {
         			throw new AbortException("builder has no series configured");
         		}
@@ -83,11 +89,16 @@ public class UIPBuilder extends Builder {
         return false;
     }
     
-    public String getNewLabel(EnvVars envVars,BuildListener listener) {
+    public String getNewLabel(EnvVars envVars,BuildListener listener, AbstractBuild<?, ?> build) {
     	final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd.HHmm");
     	if (envVars.containsKey(UIPBuilder.seriesName)) {
     		String series = envVars.get(seriesName);
-    		return series+"_"+dateFormatter.format(new Date());
+    		String newLabel = series+"_"+dateFormatter.format(new Date());
+    		if (series.equals("JDEVADF_PT.POC2_GENERIC")) {
+    			return newLabel+"."+String.format("%04d",build.getNumber());
+    		} else {
+    			return newLabel;
+    		}
     	} else {
     		listener.error("no "+seriesName+" in environment");
     		for (Map.Entry<String,String> entry: envVars.entrySet()) {
