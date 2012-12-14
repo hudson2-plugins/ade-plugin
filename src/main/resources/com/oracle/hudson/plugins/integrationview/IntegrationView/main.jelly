@@ -1,0 +1,23 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+  <j:set var="views" value="${it.owner.views}" />
+  <j:set var="currentView" value="${it}" />
+  <j:choose>
+    <j:when test="${empty(it.items)}">
+      <j:if test="${!empty(app.items)}">
+        <st:include page="viewTabs.jelly" it="${it.owner.viewsTabBar}" />
+      </j:if>
+      <st:include page="noJob.jelly" />
+    </j:when>
+    <j:otherwise>
+      <st:include page="viewTabs.jelly" it="${it.owner.viewsTabBar}" />
+      <j:set var="jobs" value="${it.items}"/>
+
+      <j:if test="${it.isIncludeStdJobList()}">
+        <t:projectView jobs="${it.jobs}" jobBaseUrl="" showViewTabs="true" columnExtensions="${it.columns}"/>
+      </j:if>
+
+      <p/>
+      <script type="text/javascript" src="${rootURL}/plugin/ade-classic-plugin/js/integrationview.js"></script>
+    </j:otherwise>
+  </j:choose>
+</j:jelly>

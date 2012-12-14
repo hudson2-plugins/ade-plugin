@@ -1,3 +1,4 @@
 <div>
-	This plugin is here to wrap build actions that must occur inside of an ADE view
+	This plugin is here to wrap build actions that must occur inside of an ADE view, to integrate UIP, and to provide custom views
+	of the integration workflows
 </div>
