@@ -41,9 +41,16 @@ public class UIPBuilder extends Builder {
         return task;
     }
     
+    /**
+     * if the job contains a UIP task which calls either integrate or prebuild then we should schedule an action
+     * for the ADE BuildWrapper to execute (updating the intg files)
+     * This is a pattern for having a Builder task schedule work for the BuilderWrapper.setup to do on it's behalf
+     */
     @Override
     public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-    	build.addAction(new RefreshIntgAction());
+    	if ("prebuild".equals(task) || "integrate".equals(task)) {
+    		build.addAction(new RefreshIntgAction());
+    	}
     	return true;
     }
 
@@ -52,7 +59,7 @@ public class UIPBuilder extends Builder {
     	try {
         	EnvVars envVars = build.getEnvironment(listener);
         	String label = null;
-        	if (!envVars.containsKey(newLabel)) {
+        	if (!envVars.containsKey(newLabel) || "JDEVADF_PT.POC2_GENERIC".equals(envVars.get(seriesName))) {
         		label = getNewLabel(envVars,listener,build);
         		if (label==null) {
         			throw new AbortException("builder has no series configured");
@@ -95,9 +102,9 @@ public class UIPBuilder extends Builder {
     		String series = envVars.get(seriesName);
     		String newLabel = series+"_"+dateFormatter.format(new Date());
     		if (series.equals("JDEVADF_PT.POC2_GENERIC")) {
-    			return newLabel+"."+String.format("%04d",build.getNumber());
+    			return newLabel+"."+String.format("%04d",build.getNumber())+".S";
     		} else {
-    			return newLabel;
+    			return newLabel+".S";
     		}
     	} else {
     		listener.error("no "+seriesName+" in environment");

@@ -435,8 +435,12 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 				} else {
 					listener.getLogger().println("saving view");
 				}
-			} catch (Exception e) {
-				listener.getLogger().println("Error destroying view:  "+e.getMessage());
+			} catch (InterruptedException e) {
+				listener.getLogger().println("WARNING:  Interrupted while destroying view:  "+e);
+				return true;
+			} catch (IOException e) {
+				listener.getLogger().println("WARNING:  IOException while destroying view:  "+e);
+				listener.getLogger().println("still marking this as a failure because the ade destroyview _MUST_ succeed here");
 				return false;
 			}
 			return true;
