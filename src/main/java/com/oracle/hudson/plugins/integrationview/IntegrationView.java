@@ -119,6 +119,10 @@ public class IntegrationView extends ListView {
 		public Group(String s) {
 			this.labelName = s;
 		}
+		
+		public String getLabelName() {
+			return this.labelName;
+		}
 
 		public synchronized List<Job> getJobs() {
 			List<Job> jobs = new ArrayList<Job>();
