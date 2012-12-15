@@ -74,6 +74,7 @@ public class IntegrationView extends ListView {
 
       String sIncludeStdJobList = Util.nullify(req.getParameter("includeStdJobList"));
       includeStdJobList = sIncludeStdJobList != null && "on".equals(sIncludeStdJobList);
+      includeStdJobList = true;
 
       String sUseCssStyle = Util.nullify(req.getParameter("useCssStyle"));
       useCssStyle = sUseCssStyle != null && "on".equals(sUseCssStyle);
@@ -94,4 +95,25 @@ public class IntegrationView extends ListView {
          return "ADE integration view";
       }
    }
+   
+	public final class Group {
+		private String labelName;
+
+		public synchronized List<Job> getJobs() {
+			List<Job> jobs = new ArrayList<Job>();
+			String[] vals = { "prebild", "build", "postbuild", "postpublish" };
+			for (String n : vals) {
+				getByName(n, jobs);
+			}
+
+			return jobs;
+		}
+
+		private void getByName(String n, List<Job> jobs) {
+			TopLevelItem item = getJob(labelName + "_" + n);
+			if (item instanceof Job) {
+				jobs.add((Job) item);
+			}
+		}
+	}
 }

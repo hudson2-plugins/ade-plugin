@@ -181,11 +181,8 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 
 		if (exitCode!=0) {
 			listener.getLogger().println("createview(success):  "+exitCode);
-			//return new EnvironmentImpl(launcher,build);
 			launcher.kill(getEnvOverrides(build));
-		} else {
-			listener.getLogger().println("createview:  "+exitCode);
-			//return new EnvironmentImpl(launcher,build);
+			throw new IOException("unable to create the view.  ADE returned a non-zero error code on the createview command");
 		}
 	}
 
