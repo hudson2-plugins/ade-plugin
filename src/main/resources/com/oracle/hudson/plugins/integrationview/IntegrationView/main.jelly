@@ -54,11 +54,16 @@
 
       <p/>
       
+      <link rel="stylesheet" href="${rootURL}/plugin/ade-classic-plugin/css/jquery-ui.css"/>
+      <link rel="stylesheet" href="${rootURL}/plugin/ade-classic-plugin/css/jquery.ui.theme.css"/>
       <script type="text/javascript" src="${rootURL}/plugin/ade-classic-plugin/js/integrationview.js"></script>
-      <script type="text/javascript" src="${rootURL}/plugin/ade-classic-plugin/js/jquery-ui-1.8.24.custom.min.js"></script>
+      <script type="text/javascript" src="${rootURL}/plugin/ade-classic-plugin/js/jquery-1.8.3.js"></script>
+      <script type="text/javascript" src="${rootURL}/plugin/ade-classic-plugin/js/jquery-ui-1.9.2.custom.js"></script>
       
       <script>
-          $( "#accordion" ).accordion();
+        $(function() {
+            $( "#accordion" ).accordion();
+        });
       </script>
     </j:otherwise>
   </j:choose>
