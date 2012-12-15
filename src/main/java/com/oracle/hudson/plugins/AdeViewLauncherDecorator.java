@@ -279,7 +279,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
 		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
-                overrides.put("TMPDIR",build.getWorkspace()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
+                overrides.put("TMPDIR", getViewStorage()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
 		return overrides;
 	}
 	
