@@ -12,9 +12,36 @@
       <st:include page="viewTabs.jelly" it="${it.owner.viewsTabBar}" />
       <j:set var="jobs" value="${it.items}"/>
 
-      <j:if test="${it.isIncludeStdJobList()}">
-        <t:projectView jobs="${it.jobs}" jobBaseUrl="" showViewTabs="true" columnExtensions="${it.columns}"/>
-      </j:if>
+	  <t:setIconSize/>
+	  <div class="dashboard">
+	
+	      <j:if test="${columnExtensions==null}">
+	          <j:invokeStatic var="columnExtensions" className="hudson.model.ListView" method="getDefaultColumns"/>
+	      </j:if>
+	    
+	      <!-- the caller can inject a tab bar here -->
+	      <d:invokeBody/>
+	      
+	      <j:forEach var="group" items="${groups}">
+		      <table id="projectstatus" class="sortable pane bigtable"
+		             style="${showViewTabs!=null?'margin-top:0px; border-top: none;':null}">
+		        <tr style="border-top: 0px;">
+		          <j:forEach var="col" items="${columnExtensions}">
+		             <st:include page="columnHeader.jelly" it="${col}" />
+		          </j:forEach>
+		          <th>
+		            <st:nbsp/>
+		          </th>
+		        </tr>
+		
+		        <j:forEach var="job" items="${group.jobs}">
+		          <t:projectViewRow />
+		        </j:forEach>
+		      </table>
+	      </j:forEach>
+	      
+	      <t:iconSize><t:rssBar/></t:iconSize>
+	  </div>
 
       <p/>
       <script type="text/javascript" src="${rootURL}/plugin/ade-classic-plugin/js/integrationview.js"></script>
