@@ -11,6 +11,7 @@
     <j:otherwise>
       <st:include page="viewTabs.jelly" it="${it.owner.viewsTabBar}" />
       <j:set var="jobs" value="${it.items}"/>
+      <j:set var="groups" value="${it.groups}"/>
 
 	  <t:setIconSize/>
 	  <div class="dashboard">
@@ -20,7 +21,9 @@
 	      </j:if>
 	    
 	      <!-- the caller can inject a tab bar here -->
+	      <!--
 	      <d:invokeBody/>
+	      -->
 	      
 	      <j:forEach var="group" items="${groups}">
 		      <table id="projectstatus" class="sortable pane bigtable"

@@ -1,22 +1,22 @@
 package com.oracle.hudson.plugins.integrationview;
 
-import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.model.Job;
 import hudson.model.TopLevelItem;
 import hudson.model.ViewDescriptor;
 import hudson.model.Descriptor.FormException;
+import hudson.model.Job;
 import hudson.model.ListView;
-import java.io.IOException;
 
-import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletException;
-
-import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -66,6 +66,23 @@ public class IntegrationView extends ListView {
 
       return jobs;
    }
+   
+   public synchronized List<Group> getGroups() {
+	   List<Group> groups = new ArrayList<Group>();
+	   Set<String> names = new HashSet<String>();
+	   Pattern pattern = Pattern.compile("(.*)_(.*)");
+	   for (Job job: getJobs()) {
+		   Matcher m = pattern.matcher(job.getName());
+		   if (m.matches()) {
+			   if (!names.contains(m.group(1))) {
+				   names.add(m.group(1));
+				   groups.add(new Group(m.group(1)));
+			   }
+		   }
+	   }
+	   
+	   return groups;
+   }
 
    @Override
    protected synchronized void submit(StaplerRequest req)
@@ -97,11 +114,15 @@ public class IntegrationView extends ListView {
    }
    
 	public final class Group {
-		private String labelName;
+		private final String labelName;
+		
+		public Group(String s) {
+			this.labelName = s;
+		}
 
 		public synchronized List<Job> getJobs() {
 			List<Job> jobs = new ArrayList<Job>();
-			String[] vals = { "prebild", "build", "postbuild", "postpublish" };
+			String[] vals = { "prebuild", "build", "postbuild", "postpublish" };
 			for (String n : vals) {
 				getByName(n, jobs);
 			}
