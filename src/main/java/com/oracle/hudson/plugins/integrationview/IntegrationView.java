@@ -2,11 +2,13 @@ package com.oracle.hudson.plugins.integrationview;
 
 import hudson.Extension;
 import hudson.Util;
+import hudson.model.BallColor;
 import hudson.model.TopLevelItem;
 import hudson.model.ViewDescriptor;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Job;
 import hudson.model.ListView;
+import hudson.model.Run;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -113,31 +115,69 @@ public class IntegrationView extends ListView {
       }
    }
    
+   
 	public final class Group {
 		private final String labelName;
-		
+		private String[] vals = { "prebuild", "build", "postbuild", "postpublish" };
+
 		public Group(String s) {
 			this.labelName = s;
 		}
-		
+
 		public String getLabelName() {
 			return this.labelName;
 		}
 
+		public BallColor getIconColor() {
+			BallColor color = BallColor.GREY;
+			try {
+				for (String n: vals) {
+					Job job = this.getJob(n);
+					Run lastBuild = this.lastFinishedBuild(job);
+					if (lastBuild!=null && lastBuild.getIconColor().equals(BallColor.RED)) {
+						color = ("build".equals(n))?BallColor.YELLOW:(lastBuild.getIconColor());
+					} else if (lastBuild!=null) {
+						color = lastBuild.getIconColor();
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return color;
+		}
+		
 		public synchronized List<Job> getJobs() {
 			List<Job> jobs = new ArrayList<Job>();
-			String[] vals = { "prebuild", "build", "postbuild", "postpublish" };
 			for (String n : vals) {
 				getByName(n, jobs);
 			}
 
 			return jobs;
 		}
-
-		private void getByName(String n, List<Job> jobs) {
-			TopLevelItem item = getJob(labelName + "_" + n);
+		
+		/*
+		 * search for Runs that are finished - don't return a Run that hasn't actually started yet
+		 */
+		private Run lastFinishedBuild(Job j) {
+			Run lastBuild = j.getLastBuild();
+			while(lastBuild!=null&&lastBuild.hasntStartedYet()) {
+				lastBuild = lastBuild.getPreviousBuild();
+			}
+			return lastBuild;
+		}
+		
+		private Job getJob(String n) {
+			TopLevelItem item = IntegrationView.this.getJob(labelName+"_"+n);
 			if (item instanceof Job) {
-				jobs.add((Job) item);
+				return (Job)item;
+			}
+			return null;
+		}
+		
+		private void getByName(String n, List<Job> jobs) {
+			Job job = getJob(n);
+			if (job!=null) {
+				jobs.add(job);
 			}
 		}
 	}

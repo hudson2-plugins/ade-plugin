@@ -27,7 +27,14 @@
 	      
 	      <div id="accordion">
 	          <j:forEach var="group" items="${groups}">
-		          <h3>${group.labelName}</h3>
+		          <h3>
+		              <table>
+		                  <tr>
+		                      <td><t:ballColorTd it="${group.iconColor}"/></td>
+		                      <td>${group.labelName}</td>
+		                  </tr>
+		              </table>
+		          </h3>
 		          <div>
 				      <table id="projectstatus" class="sortable pane bigtable"
 				             style="${showViewTabs!=null?'margin-top:0px; border-top: none;':null}">
