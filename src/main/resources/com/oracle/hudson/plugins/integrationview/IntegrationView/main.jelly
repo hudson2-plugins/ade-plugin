@@ -12,6 +12,7 @@
       <st:include page="viewTabs.jelly" it="${it.owner.viewsTabBar}" />
       <j:set var="jobs" value="${it.items}"/>
       <j:set var="groups" value="${it.groups}"/>
+      <j:set var="columnExtensions" value="${it.columns}"/>
 
 	  <t:setIconSize/>
 	  <div class="dashboard">
@@ -69,7 +70,10 @@
       
       <script>
         $(function() {
-            $( "#accordion" ).accordion();
+            $( "#accordion" ).accordion({
+                active: false,
+                collapsible: true
+            });
         });
       </script>
     </j:otherwise>

@@ -24,10 +24,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 public class IntegrationView extends ListView {
-   /*
-    * Use custom CSS style provided by the user
-    */
 
+	private static BallColor[] colors = {BallColor.GREY,BallColor.BLUE,BallColor.YELLOW,BallColor.RED,BallColor.DISABLED,BallColor.ABORTED};
+	
    private boolean useCssStyle = false;
    /*
     * Show standard jobs list at the top of the page
@@ -105,7 +104,21 @@ public class IntegrationView extends ListView {
       // Bug 6689 <http://issues.jenkins-ci.org/browse/JENKINS-6689>
       // TODO: if this view is the default view configured in Jenkins, the we must keep it after renaming
    }
-
+   
+	private static boolean lessThan(BallColor current, BallColor newColor) {
+		// TODO memoize since this could get called a lot
+		return (getOrdinal(current)<getOrdinal(newColor));
+	}
+	
+	private static int getOrdinal(BallColor color) {
+		for (int i= 0; i<colors.length; i++) {
+			if (color.equals(colors[i])) {
+				return i;
+			}
+		}
+		return 0;
+	}
+	
    @Extension
    public static final class DescriptorImpl extends ViewDescriptor {
 
@@ -118,7 +131,7 @@ public class IntegrationView extends ListView {
    
 	public final class Group {
 		private final String labelName;
-		private String[] vals = { "prebuild", "build", "postbuild", "postpublish" };
+		private String[] vals = { "prebuild", "build", "postbuild"};
 
 		public Group(String s) {
 			this.labelName = s;
@@ -134,10 +147,15 @@ public class IntegrationView extends ListView {
 				for (String n: vals) {
 					Job job = this.getJob(n);
 					Run lastBuild = this.lastFinishedBuild(job);
+					
 					if (lastBuild!=null && lastBuild.getIconColor().equals(BallColor.RED)) {
-						color = ("build".equals(n))?BallColor.YELLOW:(lastBuild.getIconColor());
+						color = ("build".equals(n))?BallColor.YELLOW:BallColor.RED;
 					} else if (lastBuild!=null) {
-						color = lastBuild.getIconColor();
+						// if new color is less than in the sense GREY < BLUE < YELLOW < RED < DISABLED < ABORTED
+						// then update it since the top-level report is a "worse-case" scenario
+						if (lessThan(color,lastBuild.getIconColor())) {
+							color = lastBuild.getIconColor();
+						}
 					}
 				}
 			} catch (Exception e) {
