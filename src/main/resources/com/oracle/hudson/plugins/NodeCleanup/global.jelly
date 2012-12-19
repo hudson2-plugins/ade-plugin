@@ -1,0 +1,30 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+  <!--
+     ${descriptor.startupenabled}   field is updated by parameter _.nodestartup.enabled
+     ${descriptor.startupscript}    field is updated by parameter _.nodestartup.script
+  -->
+  <f:section title="Enable Node initialization script">
+    <f:optionalBlock checked="${descriptor.startupenabled}" field="nodestartup.enabled" title="enabled">
+        <f:advanced title="GroovyScript">
+           <f:entry title="groovy script" field="nodestartup.script">
+               <f:textarea field="nodestartup.script" value="${descriptor.startupscript}"/>
+           </f:entry>
+        </f:advanced>
+    </f:optionalBlock>
+  </f:section>
+  
+  <!--
+  	${descriptor.enabled} field is updated by parameter _.nodecleanup.enabled
+  	${descriptor.script}  field is updated by parameter _.nodecleanup.script
+  -->
+  <f:section title="Enable Node cleanup script">
+    <f:optionalBlock checked="${descriptor.enabled}" field="nodecleanup.enabled" title="enabled">
+        <f:advanced title="GroovyScript">
+           <f:entry title="groovy script" field="nodecleanup.script">
+               <f:textarea field="nodecleanup.script" value="${descriptor.script}"/>
+           </f:entry>
+        </f:advanced>
+    </f:optionalBlock>
+  </f:section>
+</j:jelly>

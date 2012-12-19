@@ -131,7 +131,7 @@ public class IntegrationView extends ListView {
    
 	public final class Group {
 		private final String labelName;
-		private String[] vals = { "prebuild", "build", "postbuild"};
+		private String[] vals = { "prebuild", "build", "postbuild", "postpublish"};
 
 		public Group(String s) {
 			this.labelName = s;
@@ -149,7 +149,7 @@ public class IntegrationView extends ListView {
 					Run lastBuild = this.lastFinishedBuild(job);
 					
 					if (lastBuild!=null && lastBuild.getIconColor().equals(BallColor.RED)) {
-						color = ("build".equals(n))?BallColor.YELLOW:BallColor.RED;
+						color = ("build".equals(n))?BallColor.RED:BallColor.RED;
 					} else if (lastBuild!=null) {
 						// if new color is less than in the sense GREY < BLUE < YELLOW < RED < DISABLED < ABORTED
 						// then update it since the top-level report is a "worse-case" scenario
