@@ -6,6 +6,7 @@ import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.Proc;
 import hudson.model.BuildListener;
+import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -412,9 +413,32 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 				env.putAll(envMapToAdd);
 			}
 		}
+		private void runPromoteIfNecessary(AbstractBuild build,BuildListener listener) {
+			listener.getLogger().println("check for DO promotion");
+			try {
+				UIPPromoteWrapper.PromotionAction action = build.getAction(UIPPromoteWrapper.PromotionAction.class);
+				if (action!=null) {
+					try {
+						action.execute(build,launcher,listener);
+					} catch (Exception e) {
+						listener.error("WARNING:  even though we detected the need to refresh intg.  The operation to do so has failed");
+					}
+				} else {
+					listener.getLogger().println("this ADE view will terminate with no DO promotion");
+				}
+
+			} catch (Exception e) {
+				listener.getLogger().println("Promotion Action failed:  "+e);
+				listener.getLogger().println("setting the Build Result to failed");
+				build.setResult(Result.FAILURE);
+			}
+		}
+		
 		@Override
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
 				throws IOException, InterruptedException {
+			//
+			runPromoteIfNecessary(build,listener);
 			try {
 				if (getShouldDestroyView()) {
 					listener.getLogger().println("tearing down:  ade destroyview");
