@@ -1,0 +1,14 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:section title="Farm Repository Management">
+    <f:entry title="Maven Repository Location"
+      description="location of the Maven repository on each farm box (can be over-ridden by the job)">
+      <f:textbox name="farmcleanup.location" value="${descriptor.location}" />
+    </f:entry>
+    <f:entry name="policy" title="Choose policy Type" field="farmcleanup.policy">
+      <select name="policy" value="${descriptor.policy}">
+        <option value="PURGE">purge entire repository</option>
+        <option value="PURGE_UNUSED">Clean out artifacts not touched in the last month</option>
+      </select>
+    </f:entry>
+  </f:section>
+</j:jelly>

@@ -1,0 +1,7 @@
+<?jelly escape-by-default='true'?>
+<a href="${rootURL}/${it.build.url}/">
+    <img width="16" height="16"
+      tooltip="${it.description}"
+      alt="[${it.description}]"
+      src="${imagesURL}/16x16/${it.iconFileName}"/>
+</a>

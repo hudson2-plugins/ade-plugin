@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
+
+import com.oracle.hudson.plugins.IntegrationBadgeAction.Type;
 //import hudson.model.Cause.*;
 
 /**
@@ -418,26 +420,27 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			try {
 				UIPPromoteWrapper.PromotionAction action = build.getAction(UIPPromoteWrapper.PromotionAction.class);
 				if (action!=null) {
-					try {
-						action.execute(build,launcher,listener);
-					} catch (Exception e) {
-						listener.error("WARNING:  even though we detected the need to refresh intg.  The operation to do so has failed");
+					if (build.getResult()==null || (build.getResult()!=null && build.getResult().equals(Result.SUCCESS))) {
+						build.addAction(new IntegrationBadgeAction(Type.BUILD, true));
+					} else {
+						build.addAction(new IntegrationBadgeAction(Type.BUILD,false));
 					}
+					action.execute(build,launcher,listener);
+					build.addAction(new IntegrationBadgeAction(Type.PROMOTE, true));
 				} else {
 					listener.getLogger().println("this ADE view will terminate with no DO promotion");
 				}
-
 			} catch (Exception e) {
 				listener.getLogger().println("Promotion Action failed:  "+e);
 				listener.getLogger().println("setting the Build Result to failed");
 				build.setResult(Result.FAILURE);
+				build.addAction(new IntegrationBadgeAction(Type.PROMOTE,false));
 			}
 		}
 		
 		@Override
 		public boolean tearDown(AbstractBuild build, BuildListener listener)
 				throws IOException, InterruptedException {
-			//
 			runPromoteIfNecessary(build,listener);
 			listener.getLogger().println("before tear down result:  "+build.getResult());
 			try {

@@ -59,7 +59,7 @@ public class UIPBuilder extends Builder {
     	try {
         	EnvVars envVars = build.getEnvironment(listener);
         	String label = null;
-        	if (!envVars.containsKey(newLabel) || "JDEVADF_PT.POC2_GENERIC".equals(envVars.get(seriesName))) {
+        	if (!envVars.containsKey(newLabel)) {
         		label = getNewLabel(envVars,listener,build);
         		if (label==null) {
         			throw new AbortException("builder has no series configured");
@@ -68,7 +68,7 @@ public class UIPBuilder extends Builder {
         		envVars.put(newLabel, label);
         	} else {
         		label = envVars.get(newLabel);
-        		listener.getLogger().println("use existing "+newLabel+":  "+label);
+        		listener.getLogger().println("use existing "+newLabel+" already set by ADE plugin:  "+label);
         	}
 			ProcStarter procStarter = launcher.launch().cmds(
 				"integrate",
@@ -92,26 +92,22 @@ public class UIPBuilder extends Builder {
 			listener.fatalError(e.getMessage());
 		} catch (InterruptedException e) {
 			listener.fatalError(e.getMessage());
+		} catch (Exception e) {
+			listener.fatalError(e.getMessage());
 		}
         return false;
     }
     
-    public String getNewLabel(EnvVars envVars,BuildListener listener, AbstractBuild<?, ?> build) {
+    public String getNewLabel(EnvVars envVars,BuildListener listener, AbstractBuild<?, ?> build)
+    	throws Exception {
     	final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyMMdd.HHmm");
     	if (envVars.containsKey(UIPBuilder.seriesName)) {
     		String series = envVars.get(seriesName);
     		String newLabel = series+"_"+dateFormatter.format(new Date());
-    		if (series.equals("JDEVADF_PT.POC2_GENERIC")) {
-    			return newLabel+"."+String.format("%04d",build.getNumber())+".S";
-    		} else {
-    			return newLabel+".S";
-    		}
+    		return newLabel+".S";
     	} else {
     		listener.error("no "+seriesName+" in environment");
-    		for (Map.Entry<String,String> entry: envVars.entrySet()) {
-    			listener.getLogger().println(entry.getKey()+":"+entry.getValue());
-    		}
-    		return "JRF_PT.POC1_GENERIC_"+dateFormatter.format(new Date());
+    		throw new Exception("no "+seriesName+" in environment - not continuing with integration");
     	}
     }
 

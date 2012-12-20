@@ -1,0 +1,32 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  
+  <f:entry title="variable name" field="variableName">
+    <f:textbox />
+  </f:entry>
+  
+  <f:block>
+    <table>
+      <j:set var="isOverriding" value="${instance.isOverridingRepository}"/>
+      <f:optionalBlock name="dynamic" title="over-ride local repository" checked="${isOverriding}">
+        <f:entry title="repository location" field="repositoryDirectory">
+          <f:textbox />
+        </f:entry>
+      </f:optionalBlock>
+    </table>
+  </f:block>
+  
+  <f:block>
+    <table>
+      <j:set var="isCleaning" value="${instance.isCleaningRepository}"/>
+      <f:optionalBlock name="dynamic" title="cleanup after build" checked="${isCleaning}">
+        <f:entry name="policy" title="Choose policy Type" field="policy">
+            <select name="policy">
+                <option value="purge">Purge</option>
+                <option value="clean unused">Clean out artifacts not touched in the last month</option>
+            </select>
+        </f:entry> 
+      </f:optionalBlock>
+    </table>
+  </f:block>
+  
+</j:jelly>
