@@ -414,7 +414,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			}
 		}
 		private void runPromoteIfNecessary(AbstractBuild build,BuildListener listener) {
-			listener.getLogger().println("check for DO promotion");
+			listener.getLogger().println("check for DO promotion:  current result is "+build.getResult());
 			try {
 				UIPPromoteWrapper.PromotionAction action = build.getAction(UIPPromoteWrapper.PromotionAction.class);
 				if (action!=null) {
@@ -439,6 +439,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 				throws IOException, InterruptedException {
 			//
 			runPromoteIfNecessary(build,listener);
+			listener.getLogger().println("before tear down result:  "+build.getResult());
 			try {
 				if (getShouldDestroyView()) {
 					listener.getLogger().println("tearing down:  ade destroyview");
@@ -465,6 +466,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 				listener.getLogger().println("still marking this as a failure because the ade destroyview _MUST_ succeed here");
 				return false;
 			}
+			listener.getLogger().println("after tear down:  returning true");
 			return true;
 		}
 	}
