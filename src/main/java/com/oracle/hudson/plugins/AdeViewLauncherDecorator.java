@@ -144,7 +144,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 		if (!useExistingView){
-			createNewView(build, launcher, listener);
+			startViewCreationAttempts(build,launcher,listener);
 		}
 		
 		RefreshIntgAction action = build.getAction(RefreshIntgAction.class);
@@ -165,7 +165,28 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			return new EnvironmentImpl(launcher,build); 
 		}
 	}
+	
+	private void startViewCreationAttempts(AbstractBuild build, Launcher launcher, BuildListener listener)
+		throws InterruptedException, IOException {
+		int attempts = 0;
+		do {
+			try {
+				createNewView(build, launcher, listener);
+				// success
+				return;
+			} catch (Exception e) {
+				// try again after 10 seconds
+				Thread.sleep(getPauseBetweenAttempts()*1000);
+				attempts++;
+				listener.getLogger().println("retry attempt #"+attempts);
+				continue;
+			}
+		} while (attempts < getMaxAttempts());
 
+		// we were not able to create the view
+		throw new IOException("abandoning the attempt to create a view of "+series+" after "+getMaxAttempts()+" failed attempts"); 
+	}
+	
 	@SuppressWarnings("rawtypes")
 	private void createNewView(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
@@ -239,6 +260,14 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	
 	String getSite() {
 		return ((DescriptorImpl)this.getDescriptor()).getSite();
+	}
+	
+	int getMaxAttempts() {
+		return ((DescriptorImpl)this.getDescriptor()).getMaxAttempts();
+	}
+	
+	int getPauseBetweenAttempts() {
+		return ((DescriptorImpl)this.getDescriptor()).getPauseBetweenViewCreationAttempts();
 	}
 
 	private String getExpandedLabel(@SuppressWarnings("rawtypes") AbstractBuild build, TaskListener listener) {
@@ -481,11 +510,21 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		private String workspace;
 		private String viewStorage;
 		private String site;
+		private int maxAttempts = 15;
+		private int pauseBetweenViewCreationAttempts = 10; // in seconds
 		
 		public DescriptorImpl() {
 			load();
 		}
 		
+		public int getMaxAttempts() {
+			return this.maxAttempts;
+		}
+		
+		public int getPauseBetweenViewCreationAttempts() {
+			return this.pauseBetweenViewCreationAttempts;
+		}
+
 		@Override
 		public boolean isApplicable(AbstractProject<?, ?> arg0) {
 			return true;
@@ -536,6 +575,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			this.viewStorage = req.getParameter("ade_classic.view_storage");
 			this.site = req.getParameter("ade_classic.site");
 			this.token = req.getParameter("ade_classic.token");
+			
+			this.maxAttempts = Integer.parseInt(req.getParameter("ade_classic.maxattempts"));
+			this.pauseBetweenViewCreationAttempts = Integer.parseInt(req.getParameter("ade_classic.pause"));
 			save();
 			return super.configure(req);
 		}

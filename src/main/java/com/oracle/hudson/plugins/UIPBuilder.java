@@ -13,8 +13,10 @@ import hudson.tasks.Builder;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -70,18 +72,25 @@ public class UIPBuilder extends Builder {
         		label = envVars.get(newLabel);
         		listener.getLogger().println("use existing "+newLabel+" already set by ADE plugin:  "+label);
         	}
+        	String [] defaultArgs = {
+    				"integrate",
+    				"-t",
+    				task,
+    				"-N",
+    				"exitifnotransactions",
+    				"-N",
+    				"openlog",
+    				"--New_Label",
+    				label        			
+        	};
+        	List<String> args = Arrays.asList(defaultArgs);
+        	if ("prebuild".equals(task)) {
+        		args.add("-N");
+        		args.add("refreshview");
+        	}
+        	
 			ProcStarter procStarter = launcher.launch().cmds(
-				"integrate",
-				"-t",
-				task,
-				"-N",
-				"exitifnotransactions",
-				"-N",
-				"openlog",
-				"--Ade_Refreshview_Delay",
-				"360",
-				"--New_Label",
-				label
+				args.toArray(new String[]{})
 				).stdout(listener).stderr(listener.getLogger());
 			Proc proc = launcher.launch(procStarter);
 			int exitCode = proc.join();

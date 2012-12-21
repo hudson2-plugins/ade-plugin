@@ -45,5 +45,13 @@
       description="token for kerberos initialization">
       <f:password name="ade_classic.token" value="${descriptor.token}" />
     </f:entry>
+    <f:entry title="pause between attempts to create view (in seconds)"
+      description="this pause is needed because of a known issue with the storage system of ADE">
+      <f:textbox name="ade_classic.pause" value="${descriptor.pauseBetweenViewCreationAttempts}" />
+    </f:entry>
+    <f:entry title="maximum number of retry attempts at view creation for a job needing to run in an ADE view"
+      description="retry attempts are needed because of a known issue with the storage system of ADE">
+      <f:textbox name="ade_classic.maxattempts" value="${descriptor.maxAttempts}" />
+    </f:entry>
   </f:section>
 </j:jelly>
