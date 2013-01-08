@@ -72,7 +72,8 @@ public class UIPBuilder extends Builder {
         		label = envVars.get(newLabel);
         		listener.getLogger().println("use existing "+newLabel+" already set by ADE plugin:  "+label);
         	}
-        	String [] defaultArgs = {
+        	List<String> args = new ArrayList<String>(
+        		Arrays.asList(
     				"integrate",
     				"-t",
     				task,
@@ -82,27 +83,30 @@ public class UIPBuilder extends Builder {
     				"openlog",
     				"--New_Label",
     				label        			
-        	};
-        	List<String> args = Arrays.asList(defaultArgs);
+        	));
         	if ("prebuild".equals(task)) {
         		args.add("-N");
         		args.add("refreshview");
         	}
-        	
+        	listener.getLogger().print("UIP command:  (");
+        	for (String a: args) {
+        		listener.getLogger().print(a+" ");
+        	}
+        	listener.getLogger().println(")");
 			ProcStarter procStarter = launcher.launch().cmds(
 				args.toArray(new String[]{})
-				).stdout(listener).stderr(listener.getLogger());
+			).stdout(listener).stderr(listener.getLogger());
 			Proc proc = launcher.launch(procStarter);
 			int exitCode = proc.join();
 			if (exitCode==0) {
 				return true;
 			}
-		} catch (IOException e) {
-			listener.fatalError(e.getMessage());
-		} catch (InterruptedException e) {
-			listener.fatalError(e.getMessage());
 		} catch (Exception e) {
-			listener.fatalError(e.getMessage());
+			listener.fatalError("unable to launch UIP  "+e.getMessage());
+			for (StackTraceElement ste: e.getStackTrace()) {
+				listener.error(ste.toString());
+			}
+			e.printStackTrace();
 		}
         return false;
     }
