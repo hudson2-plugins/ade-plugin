@@ -1,0 +1,12 @@
+<div>
+
+<p>The UIP Promote Wrapper is a toggle to tell Hudson that this job is running in the context of an ADE label
+creation workflow.  If you do _not_ toggle this, the build will end and the view will be destroyed.  By enabling
+this toggle, the job will arrange to promote any DOs created by the build into the current label being constructed.
+
+<p>Teams would never select this for a src-only label</p>
+
+<p>Teams should always use this if they are promoting DOs into an ADE label _and_ they are not explicitly calling the UIP promote task
+in one of their build steps.  Essentially, this is a convenience so that teams can avoid interating directly with UIP.
+
+</div>
