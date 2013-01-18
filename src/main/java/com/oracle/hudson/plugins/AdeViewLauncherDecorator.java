@@ -296,7 +296,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	 * 
 	 * @return
 	 */
-	Map<String, String> getEnvOverrides(AbstractBuild<?,?> build) {
+	Map<String, String> getEnvOverrides(AbstractBuild<?,?> build, TaskListener listener) {
 		Map<String,String> overrides = new HashMap<String,String>();
 		
 		overrides.put(UIPBuilder.seriesName,getSeries());
@@ -307,13 +307,25 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
-		overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
-                overrides.put("TMPDIR", getViewStorage()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
+		try {
+			if (build.getEnvironment(listener).containsKey("INTG_ROOT")) {
+				overrides.put("PATH+INTG", build.getEnvironment(listener).get("INTG_ROOT"));
+			} else {
+				overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        overrides.put("TMPDIR", getViewStorage()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
 		return overrides;
 	}
 	
 	Map<String, String> getEnvOverrides(String[] keyValuePairs,TaskListener listener,AbstractBuild<?,?> build) {
-		Map<String,String> map = getEnvOverrides(build);
+		Map<String,String> map = getEnvOverrides(build,listener);
         if (keyValuePairs!=null) {
 	        for( String keyValue: keyValuePairs ) {
 	        	String[] split = keyValue.split("=");
