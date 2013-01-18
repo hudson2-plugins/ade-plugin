@@ -24,14 +24,14 @@ public class RefreshIntgAction extends InvisibleAction {
 		listener.getLogger().println("About to fetch Intg files.");
 		ProcStarter procStarter = launcher.launch()
 				.cmds(chooseFindAndFetchIntgFilesCommand()).stdout(listener)
-				.stderr(listener.getLogger()).envs(ade.getEnvOverrides(build));
+				.stderr(listener.getLogger()).envs(ade.getEnvOverrides(build,listener));
 
 		try {
 			Proc proc = launcher.launch(procStarter);
 			int exitCode = proc.join();
 			if (exitCode != 0) {
 				listener.getLogger().println("non-zero error code ("+exitCode+") while fetching files");
-				launcher.kill(ade.getEnvOverrides(build));
+				launcher.kill(ade.getEnvOverrides(build,listener));
 			} else {
 				return true;
 			}

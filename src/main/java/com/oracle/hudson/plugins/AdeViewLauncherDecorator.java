@@ -162,7 +162,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			return environmentCache.createEnvironment(build, launcher, listener, this);
 		} else {
 			listener.getLogger().println("setup called: use existing view" + getViewName(build));
-			return new EnvironmentImpl(launcher,build); 
+			return new EnvironmentImpl(launcher,build,listener); 
 		}
 	}
 	
@@ -197,7 +197,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					chooseCreateViewCommand(build, launcher, listener))
 				.stdout(listener)
 				.stderr(listener.getLogger())
-				.envs(getEnvOverrides(build));
+				.envs(getEnvOverrides(build,listener));
 
  		Proc proc = launcher.launch(procStarter);
 		int exitCode = proc.join();
@@ -205,7 +205,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 
 		if (exitCode!=0) {
 			listener.getLogger().println("createview(success):  "+exitCode);
-			launcher.kill(getEnvOverrides(build));
+			launcher.kill(getEnvOverrides(build,listener));
 			throw new IOException("unable to create the view.  ADE returned a non-zero error code on the createview command");
 		}
 	}
@@ -441,17 +441,19 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	class EnvironmentImpl extends Environment {
 		private Launcher launcher;
 		private AbstractBuild build;
+		private TaskListener listener;
 		private Map<String,String> envMapToAdd = null;
-		EnvironmentImpl(Launcher launcher, AbstractBuild build) {
+		EnvironmentImpl(Launcher launcher, AbstractBuild build, TaskListener listener) {
 			this.launcher = launcher;
 			this.build = build;
+			this.listener = listener;
 		}
 		public void setEnvMapToAdd(Map<String, String> envMapToAdd) {
 			this.envMapToAdd = envMapToAdd;
 		}
 		@Override
 		public void buildEnvVars(Map<String, String> env) {
-			env.putAll(getEnvOverrides(build));
+			env.putAll(getEnvOverrides(build,listener));
 			if (envMapToAdd != null ){
 				env.putAll(envMapToAdd);
 			}
@@ -495,7 +497,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 							"-force"})
 						.stdout(listener)
 						.stderr(listener.getLogger())
-						.envs(getEnvOverrides(build));
+						.envs(getEnvOverrides(build,listener));
 					Proc proc = launcher.launch(procStarter);
 					int exitCode = proc.join();
 					listener.getLogger().println("destroyview:  "+exitCode);

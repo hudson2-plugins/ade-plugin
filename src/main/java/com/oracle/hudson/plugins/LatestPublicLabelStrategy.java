@@ -77,7 +77,7 @@ class LatestPublicLabelStrategy {
 		listener.getLogger().println("The latest public label is " + latestPublicLabel);
 		
 		if (!latestPublicLabel.matches(ade.getSeries() + "_[0-9]*\\.[0-9]*.*")){
-			launcher.kill(ade.getEnvOverrides(build));
+			launcher.kill(ade.getEnvOverrides(build,listener));
 		}
 		return latestPublicLabel;
 	}

@@ -44,14 +44,14 @@ class AdeEnvironmentCache {
 				.cmds("ade","useview",ade.getViewName(build),"-exec","printenv >" + workspace + "/adeEnv")
 				.stdout(listener)
 				.stderr(listener.getLogger())
-				.envs(ade.getEnvOverrides(build));
+				.envs(ade.getEnvOverrides(build,listener));
 		Proc uvProc = launcher.launch(uvProcStarter);
 		uvProc.join();
 		//now read the env variables into Env and return that for all builds
 		FilePath remoteFile = build.getWorkspace();
 		Map<String,String> envMap = remoteFile.act(new AdeEnvCallable());
 
-		EnvironmentImpl retEnv = ade.new EnvironmentImpl(launcher,build);
+		EnvironmentImpl retEnv = ade.new EnvironmentImpl(launcher,build,listener);
 		retEnv.setEnvMapToAdd(envMap);
 
 		return retEnv;
