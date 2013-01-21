@@ -307,19 +307,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
 		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
 		// an OS-specific manner
-		try {
-			if (build.getEnvironment(listener).containsKey("INTG_ROOT")) {
-				overrides.put("PATH+INTG", build.getEnvironment(listener).get("INTG_ROOT"));
-			} else {
-				overrides.put("PATH+INTG","/usr/local/packages/intg/bin");
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		overrides.put("PATH+INTG","${INTG_ROOT}/bin");
         overrides.put("TMPDIR", getViewStorage()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
 		return overrides;
 	}
