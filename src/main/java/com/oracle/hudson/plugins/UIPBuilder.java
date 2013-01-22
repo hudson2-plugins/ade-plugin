@@ -8,6 +8,7 @@ import hudson.Proc;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 
@@ -55,12 +56,34 @@ public class UIPBuilder extends Builder {
     	}
     	return true;
     }
+    
+	private String getExpandedPath(@SuppressWarnings("rawtypes") AbstractBuild build, TaskListener listener, String v) {
+		try {
+			return build.getEnvironment(listener).expand(v);
+		} catch (IOException e) {
+			listener.error("IOException while trying to expand "+v);
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			listener.error("InterruptedException while trying to expand "+v);
+			e.printStackTrace();
+		}
+		return v;
+	}
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
     	try {
         	EnvVars envVars = build.getEnvironment(listener);
         	String label = null;
+    		
+        	// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
+    		// an OS-specific manner
+    		// overrides.put("PATH+INTG0","/usr/local/packages/intg/bin");
+    		envVars.put("PATH+INTG",getExpandedPath(build,listener,"$INTG_ROOT/bin"));
+    		listener.getLogger().println(
+    			"UIPBuilder prepending Launcher PATH with "
+    			+envVars.get("PATH+INTG")+" which should over-ride any other UIP install except one in setup_env.pl");
+
         	if (!envVars.containsKey(newLabel)) {
         		label = getNewLabel(envVars,listener,build);
         		if (label==null) {
@@ -93,9 +116,13 @@ public class UIPBuilder extends Builder {
         		listener.getLogger().print(a+" ");
         	}
         	listener.getLogger().println(")");
-			ProcStarter procStarter = launcher.launch().cmds(
-				args.toArray(new String[]{})
-			).stdout(listener).stderr(listener.getLogger());
+			
+        	ProcStarter procStarter = launcher.launch()
+				.envs(envVars)
+				.cmds(args.toArray(new String[]{}))
+				.stdout(listener)
+				.stderr(listener.getLogger());
+			
 			Proc proc = launcher.launch(procStarter);
 			int exitCode = proc.join();
 			if (exitCode==0) {

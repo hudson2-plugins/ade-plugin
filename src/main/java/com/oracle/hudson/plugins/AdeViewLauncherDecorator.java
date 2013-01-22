@@ -305,9 +305,6 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		overrides.put("ADE_VIEW_ROOT",build.getWorkspace()+"/"+getUser()+"_"+getViewName(build));
 		overrides.put("ADE_SITE",getSite());
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
-		// this is a special syntax that Hudson employs to allow us to prepend entries to the base PATH in 
-		// an OS-specific manner
-		overrides.put("PATH+INTG","${INTG_ROOT}/bin");
         overrides.put("TMPDIR", getViewStorage()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
 		return overrides;
 	}
@@ -358,7 +355,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
         			args[1].equals("destroyview")||
         			args[1].equals("showlabels")||
         			args[1].equals("useview"))) {
-        		listener.getLogger().println("detected createview/destroyview/showlabels/useview -> use default launcher but still override Env Vars");
+        		listener.getLogger().println("ADE decorated launcher:  detected createview/destroyview/showlabels/useview -> use default launcher but still override Env Vars");
         	} else {
         		// prefix everything else
         		starter.cmds(prefix(starter.cmds().toArray(new String[]{})));
