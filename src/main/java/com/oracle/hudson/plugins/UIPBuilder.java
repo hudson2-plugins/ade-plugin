@@ -129,7 +129,8 @@ public class UIPBuilder extends Builder {
 				return true;
 			}
 		} catch (Exception e) {
-			listener.fatalError("unable to launch UIP  "+e.getMessage());
+			listener.fatalError("unexpected Exception caught launching UIP:  "+e.getMessage());
+			(new RaiseServiceRequestAction(build, launcher, listener, "unable to run UIP command")).execute();
 			for (StackTraceElement ste: e.getStackTrace()) {
 				listener.error(ste.toString());
 			}

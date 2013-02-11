@@ -184,7 +184,9 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		} while (attempts < getMaxAttempts());
 
 		// we were not able to create the view
-		throw new IOException("abandoning the attempt to create a view of "+series+" after "+getMaxAttempts()+" failed attempts"); 
+		String message = "abandoning the attempt to create a view of "+series+" after "+getMaxAttempts()+" failed attempts";
+		(new RaiseServiceRequestAction(build,launcher, listener, message)).execute();
+		throw new IOException(message); 
 	}
 	
 	@SuppressWarnings("rawtypes")

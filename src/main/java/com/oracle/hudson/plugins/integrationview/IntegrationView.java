@@ -5,6 +5,7 @@ import hudson.Util;
 import hudson.model.BallColor;
 import hudson.model.TopLevelItem;
 import hudson.model.ViewDescriptor;
+import hudson.model.AbstractProject;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Job;
 import hudson.model.ListView;
@@ -131,7 +132,6 @@ public class IntegrationView extends ListView {
    
 	public final class Group {
 		private final String labelName;
-		private String[] vals = { "prebuild", "build", "postbuild", "postpublish"};
 
 		public Group(String s) {
 			this.labelName = s;
@@ -144,8 +144,11 @@ public class IntegrationView extends ListView {
 		public BallColor getIconColor() {
 			BallColor color = BallColor.GREY;
 			try {
-				for (String n: vals) {
+				for (String n: JobSuffixes.vals) {
 					Job job = this.getJob(n);
+					if (isDisabled(job)) {
+						continue;
+					}
 					Run lastBuild = this.lastFinishedBuild(job);
 					
 					if (lastBuild!=null && lastBuild.getIconColor().equals(BallColor.RED)) {
@@ -164,9 +167,17 @@ public class IntegrationView extends ListView {
 			return color;
 		}
 		
+		private Boolean isDisabled(Job job) {
+			try {
+				return ((AbstractProject)job).isDisabled();
+			} catch (ClassCastException e) {
+				return false;
+			}
+		}
+		
 		public synchronized List<Job> getJobs() {
 			List<Job> jobs = new ArrayList<Job>();
-			for (String n : vals) {
+			for (String n : JobSuffixes.vals) {
 				getByName(n, jobs);
 			}
 
