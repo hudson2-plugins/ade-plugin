@@ -9,4 +9,47 @@
       <f:option selected="${instance.task=='sourceOnlyLabel'}" value="sourceOnlyLabel">Source Only Label</f:option>
     </select>
   </f:entry>
+
+    <f:entry title="Label Product Primary Schema" field="labelProductPrimarySchema">
+        <f:textbox name="labelProductPrimarySchema" size="30" maxlength="30"/>
+    </f:entry>
+
+    <f:entry title="Label Product Combo Schemas" field="labelProductComboSchemas">
+        <f:textbox name="labelProductComboSchemas" />
+    </f:entry>
+
+    <script>
+            var $j = jQuery.noConflict(); 
+        jQuery(document).ready(function($j) {
+            if ($j("select[name='task']").val() == 'sourceOnlyLabel') {
+                $j("input[name='labelProductPrimarySchema']").parent()
+                    .parent().show().next().show();
+                $j("input[name='labelProductComboSchemas']").parent()
+                    .parent().show().next().show();
+            } else {
+               $j("input[name='labelProductPrimarySchema']").val("").parent()
+                    .parent().hide().next().hide()
+                    .find("div:.error").removeClass("error").empty();
+               $j("input[name='labelProductComboSchemas']").val("").parent()
+                    .parent().hide().next().hide()
+                    .find("div:.error").removeClass("error").empty();
+            }
+        });
+        
+       
+        $j("select[name='task']").change(function() {
+            if ($j(this).val() == 'sourceOnlyLabel') {
+                $j("input[name='labelProductPrimarySchema']").parent().parent().show().next().show();
+                $j("input[name='labelProductComboSchemas']").parent().parent().show().next().show();
+            } else {
+                $j("input[name='labelProductPrimarySchema']").val("").parent()
+                    .parent().hide().next().hide()
+                    .find("div:.error").removeClass("error").empty();
+                $j("input[name='labelProductComboSchemas']").val("").parent()
+                    .parent().hide().next().hide()
+                    .find("div:.error").removeClass("error").empty();
+            }
+        });
+    </script>    
+
 </j:jelly>
