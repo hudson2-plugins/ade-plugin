@@ -24,6 +24,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.oracle.hudson.plugins.IntegrationBadgeAction.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 //import hudson.model.Cause.*;
 
 /**
@@ -337,19 +340,29 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		private Launcher outer;
 		private String[] prefix;
 		private AbstractBuild<?,?> build;
+        private boolean useNoEnv = false; 
 		UseViewLauncher(Launcher outer, String[] prefix, AbstractBuild<?,?> b) {
 			super(outer);
 			this.outer = outer;
 			this.prefix = prefix;
 			this.build = b;
 		}
+
+        public boolean isUseNoEnv() {
+            return useNoEnv;
+        }
+
+        public void setUseNoEnv(boolean useNoEnv) {
+            this.useNoEnv = useNoEnv;
+        }
+        
         @Override
         public Proc launch(ProcStarter starter) throws IOException {
         	// this next line is crucial because a Hudson slave may not create
         	// launchers that have the appropriate environment to run ADE
         	// So, we must augment even this environment - ADE uses .cschrc for this today
         	starter.envs(getEnvOverrides(starter.envs(),listener,this.build));
-
+            
         	// don't prefix ADE commands that are intended to run outside of a view - this is massively confusing
         	String[] args = starter.cmds().toArray(new String[]{});
         	if (args.length>1 && (
@@ -360,7 +373,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
         		listener.getLogger().println("ADE decorated launcher:  detected createview/destroyview/showlabels/useview -> use default launcher but still override Env Vars");
         	} else {
         		// prefix everything else
-        		starter.cmds(prefix(starter.cmds().toArray(new String[]{})));
+        		starter.cmds(postfix(prefix(starter.cmds().toArray(new String[]{}))));
         		if (starter.masks() != null) {
         			starter.masks(prefix(starter.masks()));
         		}
@@ -390,6 +403,16 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
             // copy a single space-delimited String to tail of the new arg list
             System.arraycopy(new String[]{spaceDelimitedStringArg(args)},0,newArgs,prefix.length,1);
             return newArgs;
+        }
+        
+        private String[] postfix(String[] args) {
+            if (useNoEnv) {
+                String[] newArgs = Arrays.copyOf(args, args.length + 1);
+                newArgs[args.length] = "-noenv";
+                return newArgs;
+            } else {
+                return args;
+            }
         }
         
         private String spaceDelimitedStringArg(String[] args) {

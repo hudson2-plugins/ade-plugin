@@ -11,15 +11,16 @@ import hudson.model.AbstractProject;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
  * {@link Builder} that integrates UIP commands into Hudson
@@ -30,11 +31,22 @@ public class UIPBuilder extends Builder {
 	private static final String newLabel = "New_Label";
 	public static final String seriesName = "Series_Name";
     private final String task;
+    
+    // TODO: This should actualy be a list of UIP params
+    private final String labelProductPrimarySchema;
+    private final String labelProductComboSchemas;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public UIPBuilder(String task) {
+    public UIPBuilder(String task, String labelProductPrimarySchema, 
+        String labelProductComboSchemas) {
         this.task = task;
+        this.labelProductPrimarySchema = labelProductPrimarySchema;
+        this.labelProductComboSchemas = labelProductComboSchemas;
+    }
+    
+    public UIPBuilder(String task) {
+        this(task, null, null);
     }
 
     /**
@@ -42,6 +54,14 @@ public class UIPBuilder extends Builder {
      */
     public String getTask() {
         return task;
+    }
+
+    public String getLabelProductPrimarySchema() {
+        return labelProductPrimarySchema;
+    }
+
+    public String getLabelProductComboSchemas() {
+        return labelProductComboSchemas;
     }
     
     /**
@@ -51,7 +71,8 @@ public class UIPBuilder extends Builder {
      */
     @Override
     public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-    	if ("prebuild".equals(task) || "integrate".equals(task)) {
+    	if ("prebuild".equals(task) || "integrate".equals(task) 
+                || "sourceOnlyLabel".equals(task)) {
     		build.addAction(new RefreshIntgAction());
     	}
     	return true;
@@ -95,28 +116,57 @@ public class UIPBuilder extends Builder {
         		label = envVars.get(newLabel);
         		listener.getLogger().println("use existing "+newLabel+" already set by ADE plugin:  "+label);
         	}
-        	List<String> args = new ArrayList<String>(
-        		Arrays.asList(
-    				"integrate",
-    				"-t",
-    				task,
-    				"-N",
-    				"exitifnotransactions",
-    				"-N",
-    				"openlog",
-    				"--New_Label",
-    				label        			
-        	));
+            
+            // Build UIP command
+            
+        	List<String> args = new ArrayList<String>();
+            args.add("integrate");
+            args.add("-t");
+            if (task.equals("sourceOnlyLabel")) {
+                args.add("integrate");
+                args.add("--Source_only_label");
+                args.add("1");
+            } else {
+                args.add(task);
+            }
+            args.add("-N");
+            args.add("exitifnotransactions");
+    		args.add("-N");
+    		args.add("openlog");
+    		args.add("--New_Label");
+    		args.add(label);        			
+        	
         	if ("prebuild".equals(task)) {
         		args.add("-N");
         		args.add("refreshview");
         	}
+            
+            if ("sourceOnlyLabel".equals(task)) {
+                if ( (labelProductPrimarySchema != null 
+                        && labelProductPrimarySchema.length() > 0) &&
+                     (labelProductComboSchemas != null 
+                        && labelProductComboSchemas.length() > 0) ) {
+                    args.add("--Label_Product_Primary_Schema");
+                    args.add(labelProductPrimarySchema);
+                    args.add("--Label_Product_Combo_Schemas");
+                    args.add(labelProductComboSchemas);
+                }
+            }
+            
+            // End of Build UIP command
+            
+            if (!("build".equals(task) || "postpublish".equals(task) || "integrate".equals(task))) {
+                if (launcher instanceof AdeViewLauncherDecorator.UseViewLauncher) {
+                   ((AdeViewLauncherDecorator.UseViewLauncher) launcher).setUseNoEnv(true);
+               }
+            }
+            
         	listener.getLogger().print("UIP command:  (");
         	for (String a: args) {
         		listener.getLogger().print(a+" ");
         	}
         	listener.getLogger().println(")");
-			
+		
         	ProcStarter procStarter = launcher.launch()
 				.envs(envVars)
 				.cmds(args.toArray(new String[]{}))
@@ -124,6 +174,12 @@ public class UIPBuilder extends Builder {
 				.stderr(listener.getLogger());
 			
 			Proc proc = launcher.launch(procStarter);
+
+            
+            if (launcher instanceof AdeViewLauncherDecorator.UseViewLauncher) {
+                ((AdeViewLauncherDecorator.UseViewLauncher) launcher).setUseNoEnv(false);
+            }
+            
 			int exitCode = proc.join();
 			if (exitCode==0) {
 				return true;
@@ -182,6 +238,23 @@ public class UIPBuilder extends Builder {
          */
         public String getDisplayName() {
             return "Run a UIP task in an ADE view";
+        }
+        
+        public FormValidation doCheckLabelProductPrimarySchema(@QueryParameter String value) {
+            if (value != null && value.length() > 0
+                    && !value.matches("[A-Z][A-Z0-9]*")) {
+                return FormValidation.error("Must be an alpha numeric value in upper case. No spaces allowed.");
+            }
+            return FormValidation.ok();
+        }
+        
+        public FormValidation doCheckLabelProductComboSchemas(@QueryParameter String value) {
+            if (value != null && value.length() > 0 && (value.contains(" ") ||
+                 !value.matches("[A-Z][A-Z0-9,]*"))) {
+                return FormValidation.error("Must be a comma separated list of"
+                        + " schema names in upper case. No spaces allowed.");
+            }
+            return FormValidation.ok();
         }
     }
 }
