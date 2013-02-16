@@ -155,8 +155,8 @@ public class UIPBuilder extends Builder {
             
             // End of Build UIP command
             
-            if (! ("build".equals(task) && "postpublish".equals(task)) && "integrate".equals(task)) {
-               if (launcher instanceof AdeViewLauncherDecorator.UseViewLauncher) {
+            if (!("build".equals(task) || "postpublish".equals(task) || "integrate".equals(task))) {
+                if (launcher instanceof AdeViewLauncherDecorator.UseViewLauncher) {
                    ((AdeViewLauncherDecorator.UseViewLauncher) launcher).setUseNoEnv(true);
                }
             }
