@@ -24,9 +24,13 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.oracle.hudson.plugins.IntegrationBadgeAction.Type;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 //import hudson.model.Cause.*;
 
 /**
@@ -117,6 +121,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Boolean getCacheAdeEnv() {
 		return this.environmentCache.isActive();
 	}
+        
+        public String getTimeStamp(){
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy h:mm:ss");
+            String formattedDate = sdf.format(date);
+            return(formattedDate);
+        }
 	/**
 	 * this method is called every time a build step runs and allows us to decide how to
 	 * wrap any call that needs to run in an ADE view.  
@@ -135,6 +146,12 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Launcher decorateLauncher(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException,
 			RunnerAbortedException {
+            
+            //Printing Time Zone and Timestamp
+            TimeZone tz = Calendar.getInstance().getTimeZone();
+            listener.getLogger().println("TimeZone: "+tz.getDisplayName());
+            listener.getLogger().println("Timestamp :"+getTimeStamp());
+            
 		if (environmentCache.isActive()) {
 			return launcher;
 		} else {
@@ -157,13 +174,16 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	public Environment setUp(AbstractBuild build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 		if (!useExistingView){
-			startViewCreationAttempts(build,launcher,listener);
+		    listener.getLogger().println("Start view creation attempt :Timestamp "+getTimeStamp());	
+                    startViewCreationAttempts(build,launcher,listener);
 		}
 		
 		RefreshIntgAction action = build.getAction(RefreshIntgAction.class);
 		if (action!=null) {
 			try {
-				action.execute(build,launcher,listener,this);
+				listener.getLogger().println("Refresh Intg Action Started :"+getTimeStamp());
+                                action.execute(build,launcher,listener,this);
+                                listener.getLogger().println("Refresh Intg Action Completed :"+getTimeStamp());
 			} catch (Exception e) {
 				listener.error("WARNING:  even though we detected the need to refresh intg.  The operation to do so has failed");
 			}
@@ -173,8 +193,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		// if the ADE environment should be cached, grab all the environment variables
 		// and cache them in the Environment that will be passed in to each Launcher
 		if (environmentCache.isActive()) {
+                        listener.getLogger().println("Timestamp :"+getTimeStamp());
 			return environmentCache.createEnvironment(build, launcher, listener, this);
 		} else {
+                        listener.getLogger().println("use existing view :"+getTimeStamp());
 			listener.getLogger().println("setup called: use existing view" + getViewName(build));
 			return new EnvironmentImpl(launcher,build,listener); 
 		}
@@ -364,6 +386,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
         public Channel launchChannel(String[] cmd, OutputStream out, FilePath workDir, Map<String, String> envVars) throws IOException, InterruptedException {
         	if (cmd.length>1 && (cmd[1].equals("createview")||cmd[1].equals("destroyview")||cmd[1].equals("showlabels"))) {
         		listener.getLogger().println("detected createview/destroyview in Channel");
+                        listener.getLogger().println("Timestamp :"+getTimeStamp());
         		return outer.launchChannel(prefix(cmd),out,workDir,envVars);
         	}
             return outer.launchChannel(prefix(cmd),out,workDir,envVars);
@@ -478,6 +501,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			try {
 				if (getShouldDestroyView()) {
 					listener.getLogger().println("tearing down:  ade destroyview");
+                                        listener.getLogger().println("Timestamp :"+getTimeStamp());
 					ProcStarter procStarter = launcher.launch()
 						.cmds(new String[] {
 							"ade",
@@ -490,8 +514,10 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 					Proc proc = launcher.launch(procStarter);
 					int exitCode = proc.join();
 					listener.getLogger().println("destroyview:  "+exitCode);
+                                        listener.getLogger().println("Timestamp :"+getTimeStamp());
 				} else {
 					listener.getLogger().println("saving view");
+                                        listener.getLogger().println("Timestamp :"+getTimeStamp());
 				}
 			} catch (InterruptedException e) {
 				listener.getLogger().println("WARNING:  Interrupted while destroying view:  "+e);
