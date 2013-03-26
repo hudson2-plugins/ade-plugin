@@ -1,12 +1,11 @@
 <div>
 
-<p>The UIP Promote Wrapper is a toggle to tell Hudson that this job is running in the context of an ADE label
-creation workflow.  If you do _not_ toggle this, the build will end and the view will be destroyed.  By enabling
-this toggle, the job will arrange to promote any DOs created by the build into the current label being constructed.
+<p>This permits teams to incorporate the FMW Release Management bootstrap procedure into a Hudson job.  It bootstraps ANT, JAVA, and MAVEN 
+into the current job's Hudson workspace
 
-<p>Teams would never select this for a src-only label</p>
+<p>Please see the <a href="http://aseng-wiki.us.oracle.com/asengwiki/pages/viewpage.action?pageId=-1514700419">full documentation</a> for a complete description of how the BootStrap process works.  
+It is currently maintained by the FMW RM team.
 
-<p>Teams should always use this if they are promoting DOs into an ADE label _and_ they are not explicitly calling the UIP promote task
-in one of their build steps.  Essentially, this is a convenience so that teams can avoid interating directly with UIP.
+<p>This should only be enabled if teams are <em>not</em> executing the bootstrap module from their setup_env.pl. 
 
 </div>

@@ -43,13 +43,15 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	private String label;
 	private Boolean isTip = false;
 	private Boolean shouldDestroyView = true;
+	private Boolean shouldUseEnv = true;
 	private Boolean useExistingView = false;
 	private Boolean isUsingLabel = false;
 	private AdeEnvironmentCache environmentCache;
 	
 	@DataBoundConstructor
 	public AdeViewLauncherDecorator(String view, String series, String label, 
-									Boolean isTip, Boolean shouldDestroyView,
+									Boolean isTip, 
+									Boolean shouldDestroyView, Boolean shouldUseEnv,
 									Boolean useExistingView, Boolean cacheAdeEnv) {
 		this.viewName = view;
 		this.series = series;
@@ -57,6 +59,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		this.label = label;
 		this.isUsingLabel = labelExists(this.label);
 		this.shouldDestroyView = shouldDestroyView;
+		this.shouldUseEnv = shouldUseEnv;
 		this.useExistingView = useExistingView;
 		this.environmentCache = new AdeEnvironmentCache(cacheAdeEnv);
 	}
@@ -74,6 +77,13 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	
 	public Boolean getShouldDestroyView() {
 		if (this.shouldDestroyView==null) {
+			return true;
+		}
+		return this.shouldDestroyView;
+	}
+
+	public Boolean getShouldUseEnv() {
+		if (this.shouldUseEnv==null) {
 			return true;
 		}
 		return this.shouldDestroyView;
@@ -130,7 +140,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		} else {
 			listener.getLogger().println("detected command launch with ADE BuildWrapper active:  decorating launcher");
 			return new UseViewLauncher(launcher,
-					new String[]{"ade","useview",getViewName(build),"-exec"},build);
+				(new AdeUseViewCommand(build, this)).getArgs(),build);
 			
 		}
 	}
@@ -158,6 +168,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 				listener.error("WARNING:  even though we detected the need to refresh intg.  The operation to do so has failed");
 			}
 		}
+		
 
 		// if the ADE environment should be cached, grab all the environment variables
 		// and cache them in the Environment that will be passed in to each Launcher
@@ -169,7 +180,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		}
 	}
 	
-	private void startViewCreationAttempts(AbstractBuild build, Launcher launcher, BuildListener listener)
+	private void startViewCreationAttempts(@SuppressWarnings("rawtypes") AbstractBuild build, Launcher launcher, BuildListener listener)
 		throws InterruptedException, IOException {
 		int attempts = 0;
 		do {
@@ -198,8 +209,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		listener.getLogger().println("setup called:  ade createview");
 		
  		ProcStarter procStarter = launcher.launch()
-				.cmds(
-					chooseCreateViewCommand(build, launcher, listener))
+				.cmds((new AdeCreateViewCommand(build, listener, launcher, this)).getArgs())
 				.stdout(listener)
 				.stderr(listener.getLogger())
 				.envs(getEnvOverrides(build,listener));
@@ -212,42 +222,6 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 			listener.getLogger().println("createview(success):  "+exitCode);
 			launcher.kill(getEnvOverrides(build,listener));
 			throw new IOException("unable to create the view.  ADE returned a non-zero error code on the createview command");
-		}
-	}
-
-	/*
-	 * there are 3 different ways that we might choose to create the view
-	 * 1.  go to the tip (ER from Mike Gilbode)
-	 * 2.  accept a possibly parameterized label as input from the job context
-	 * 3.  the latest public label
-	 */
-	@SuppressWarnings("rawtypes")
-	private String[] chooseCreateViewCommand(AbstractBuild build,
-			Launcher launcher, BuildListener listener) throws IOException,
-			InterruptedException {
-		if (getIsTip()) {
-			return new String[] {
-				"ade",
-				"createview",
-				"-force",
-				"-latest",
-				"-series",
-				getSeries(),
-				"-tip_default",
-				getViewName(build)};
-		} else {
-			if (labelExists(this.label)) {
-				return new String [] {
-					"ade",
-					"createview",
-					"-force",
-					"-label",
-					getExpandedLabel(build,listener),
-					getViewName(build)
-				};
-			} else {
-				return (new LatestPublicLabelStrategy()).getCommand(build, launcher, listener, this);
-			}
 		}
 	}
 	
@@ -275,7 +249,11 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return ((DescriptorImpl)this.getDescriptor()).getPauseBetweenViewCreationAttempts();
 	}
 
-	private String getExpandedLabel(@SuppressWarnings("rawtypes") AbstractBuild build, TaskListener listener) {
+	boolean usesEnv() {
+		return this.shouldUseEnv;
+	}
+
+	String getExpandedLabel(@SuppressWarnings("rawtypes") AbstractBuild build, TaskListener listener) {
 		try {
 			return build.getEnvironment(listener).expand(this.label);
 		} catch (IOException e) {
@@ -288,7 +266,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		return this.label;
 	}
 
-	private boolean labelExists(String label) {
+	boolean labelExists(String label) {
 		return (label!=null && !"".equals(label));
 	}
 
@@ -303,7 +281,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 	 */
 	Map<String, String> getEnvOverrides(AbstractBuild<?,?> build, TaskListener listener) {
 		Map<String,String> overrides = new HashMap<String,String>();
-		
+				
 		overrides.put(UIPBuilder.seriesName,getSeries());
 		overrides.put("ADE_USER",getUser());
 		overrides.put("VIEW_NAME",getViewName(build));
@@ -311,6 +289,7 @@ public class AdeViewLauncherDecorator extends BuildWrapper {
 		overrides.put("ADE_SITE",getSite());
 		overrides.put("ADE_DEFAULT_VIEW_STORAGE_LOC",getViewStorage());
         overrides.put("TMPDIR", getViewStorage()+"/"+getUser()+"_"+getViewName(build)+"/TRASH");
+        overrides.put("FROM_HUDSON","true");
 		return overrides;
 	}
 	

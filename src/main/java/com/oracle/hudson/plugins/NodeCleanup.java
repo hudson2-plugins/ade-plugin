@@ -34,21 +34,22 @@ public class NodeCleanup extends RunListener<Run> implements Describable<NodeCle
 	 */
 	@Override
 	public void onFinalized(Run r) {
-		try {
-			Computer computer = r.getExecutor().getOwner();
-			NodeCleanupDescriptor desc = (NodeCleanupDescriptor)getDescriptor();
-			
-			if (computer.getNode().getAssignedLabels().contains(LabelAtom.get("ade")) && desc.getEnabled()) {
-				String outputFromGroovy = RemotingDiagnostics.executeGroovy( desc.getCleanupScript(), computer.getChannel());
-				System.out.println("output:  "+outputFromGroovy);
-			} 
-		} catch (IOException e) {
+//		try {
+//			Computer computer = r.getExecutor().getOwner();
+//			NodeCleanupDescriptor desc = (NodeCleanupDescriptor)getDescriptor();
+//			
+//			if (computer.getNode().getAssignedLabels().contains(LabelAtom.get("ade")) && desc.getEnabled()) {
+				//String outputFromGroovy = RemotingDiagnostics.executeGroovy( desc.getCleanupScript(), computer.getChannel());
+				//System.out.println("output:  "+outputFromGroovy);
+//			} 
+//		} catch (IOException e) {
+
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//			e.printStackTrace();
+//		}
 	}
 	@Override
 	public void onStarted(Run r, TaskListener listener) {

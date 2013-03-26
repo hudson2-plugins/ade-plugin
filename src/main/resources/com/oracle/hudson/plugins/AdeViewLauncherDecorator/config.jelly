@@ -18,6 +18,9 @@
   <f:entry title="destroy view after post-build" field="shouldDestroyView">
   	<f:booleanRadio field="shouldDestroyView" default="true"/>
   </f:entry>
+  <f:entry title="run setup_env.pl as part of view creation" field="shouldUseView">
+  	<f:booleanRadio field="shouldUseEnv" default="true"/>
+  </f:entry>
   <f:entry title="ADE label to use (usually a job parameter expanded from environment)" field="label">
   	<f:textbox/>
   </f:entry>

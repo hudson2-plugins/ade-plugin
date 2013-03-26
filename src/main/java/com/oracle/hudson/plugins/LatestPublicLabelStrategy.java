@@ -10,6 +10,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * 
@@ -22,30 +25,24 @@ import java.io.InputStreamReader;
  */
 class LatestPublicLabelStrategy {
 	
-	String[] getCommand(
+    Collection<String> getArgs(
 		@SuppressWarnings("rawtypes") AbstractBuild build,
 		Launcher launcher,
 		BuildListener listener,
 		AdeViewLauncherDecorator ade) {
 		
 		try {
-			return new String[] {
-					"ade",
-					"createview",
-					"-force",
-					"-label",
-					getLatestPublicLabel(launcher, listener, build, ade),
-					ade.getViewName(build)};
+	    	List<String> args = new ArrayList<String>();
+			args.add("-label");
+			args.add(getLatestPublicLabel(launcher, listener, build, ade));
+			return args;
 		} catch (Exception e) {
 			// fall back to the -latest strategy
-			return new String[] {
-					"ade",
-					"createview",
-					"-force",
-					"-latest",
-					"-series",
-					ade.getSeries(),
-					ade.getViewName(build)};
+			List<String> args = new ArrayList<String>();
+			args.add("-latest");
+			args.add("-series");
+			args.add(ade.getSeries());
+			return args;
 		}
 	}
 
